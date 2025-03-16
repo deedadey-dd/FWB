@@ -1,13 +1,16 @@
 {% extends 'base.html' %}
 {% block content %}
 <div class="container mt-4">
-    <h2 class="text-center">User Dashboard</h2>
+    <h2 class="text-center">Hello {{first_name}} Dashboard</h2>
 
     {% load custom_filters %}
 
     <!-- Date and Time -->
     <div class="alert alert-info text-center">
-        <strong>Current Date & Time: </strong> <span id="datetime"></span>
+        <strong><span id="datetime"></span></strong>
+        <div class="alert alert-info">
+            <h4>Contribution: <strong>GHȻ {{ monthly_amount }}/month</strong> for {{ current_year }}</h4>
+        </div>
     </div>
 
     <!-- Health Status -->
@@ -32,38 +35,36 @@
             <h5>Contribution History</h5>
         </div>
         <div class="card-body">
-            <table>
-    <thead>
-        <tr>
-            <th>Year</th>
-            {% for month in month_names %}
-                <th>{{ month }}</th>
-            {% endfor %}
-            <th>Extra</th>
-        </tr>
-    </thead>
-    <tbody>
-        {% for year, months in contributions.items %}
-        <tr>
-            <td>{{ year }}</td>
-            {% for month in month_names %}
-                {% with month_index=forloop.counter %}
-                <td>
-                    {% if contributions.year|get_dict_value:month_index %}
-                        ✅  <!-- Green check if contributed -->
-                    {% else %}
-                        ❌  <!-- Red cross if not contributed -->
-                    {% endif %}
-                </td>
-                {% endwith %}
-            {% endfor %}
-
-            <td>Extra Contributions</td>
-        </tr>
-        {% endfor %}
-    </tbody>
-</table>
-
+            <table class="table table-bordered table-striped text-center">
+                <thead class="table-dark">
+                    <tr>
+                        <th>Year</th>
+                        {% for month in month_names %}
+                            <th>{{ month }}</th>
+                        {% endfor %}
+                        <th>Extra</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for year, months in contributions.items %}
+                    <tr>
+                        <td><strong>{{ year }}</strong></td>
+                        {% for month in month_names %}
+                            {% with month_index=forloop.counter %}
+                            <td>
+                                {% if contributions|get_dict_value:year|get_dict_value:month_index %}
+                                    <span class="text-success fw-bold">✅</span> <!-- Green check -->
+                                {% else %}
+                                    <span class="text-danger fw-bold">❌</span> <!-- Red cross -->
+                                {% endif %}
+                            </td>
+                            {% endwith %}
+                        {% endfor %}
+                        <td class="fw-bold">Extra Contributions</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
         </div>
     </div>
 
@@ -73,7 +74,7 @@
             <div class="card bg-warning text-dark">
                 <div class="card-body">
                     <h5>Arrears</h5>
-                    <h3>GHȻ {{ total_arrears }} Unpaid Months</h3>
+                    <h3>{{ total_arrears }} Unpaid Months</h3>
                 </div>
             </div>
         </div>

@@ -6,6 +6,15 @@ from django.contrib.auth import get_user_model
 User = get_user_model()
 
 
+class ContributionSetting(models.Model):
+    year = models.IntegerField(unique=True)  # Unique year
+    amount = models.DecimalField(max_digits=10, decimal_places=2)  # Monthly contribution amount
+    set_by = models.ForeignKey('users.CustomUser', on_delete=models.SET_NULL, null=True, blank=True)
+
+    def __str__(self):
+        return f"{self.year} - {self.amount}"
+
+
 class Contribution(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='contributions')
     amount = models.DecimalField(max_digits=10, decimal_places=2)

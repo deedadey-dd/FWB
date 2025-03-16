@@ -1,5 +1,6 @@
 from django.contrib import admin
-from .models import Contribution, MonthlyContribution, ExtraContribution
+from .models import Contribution, MonthlyContribution, ExtraContribution, ContributionSetting
+
 
 @admin.register(Contribution)
 class ContributionAdmin(admin.ModelAdmin):
@@ -7,12 +8,20 @@ class ContributionAdmin(admin.ModelAdmin):
     search_fields = ("user__username", "user__email")
     list_filter = ("contribution_type", "date_contributed")
 
+
 @admin.register(MonthlyContribution)
 class MonthlyContributionAdmin(admin.ModelAdmin):
     list_display = ("user", "year", "month", "amount")
     search_fields = ("user__username", "user__email")
 
+
 @admin.register(ExtraContribution)
 class ExtraContributionAdmin(admin.ModelAdmin):
     list_display = ("user", "amount", "date_contributed")
     search_fields = ("user__username", "user__email")
+
+
+@admin.register(ContributionSetting)
+class ContributionSettingAdmin(admin.ModelAdmin):
+    list_display = ('year', 'amount', 'set_by')
+    search_fields = ('year',)

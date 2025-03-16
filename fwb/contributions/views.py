@@ -1,12 +1,15 @@
+# import datetime
 from django.shortcuts import render, redirect
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required, user_passes_test
 from django.core.mail import send_mail
 from django.utils.timezone import now
-from .models import Contribution
+from .models import Contribution, ContributionSetting
 from .forms import ContributionForm
 from .utils import allocate_contribution
 from django.db.models.functions import ExtractYear, ExtractMonth
+from django.db.models import Sum
+from datetime import datetime
 
 
 def is_manager(user):
@@ -35,7 +38,7 @@ def record_contribution(request):
             send_mail(
                 "Contribution Recorded",
                 f"Dear {contribution.user.first_name},\n\nA contribution of {contribution.amount} has been recorded for you.\n\nThank you!",
-                "admin@welfaresociety.com",
+                "deedadey@vivaldi.net",
                 [contribution.user.email],
                 fail_silently=True,
             )
@@ -51,6 +54,9 @@ def record_contribution(request):
 def dashboard(request):
     user = request.user
     current_date = now()
+    current_year = datetime.now().year
+    contribution_setting = ContributionSetting.objects.filter(year=current_year).first()
+    monthly_amount = contribution_setting.amount if contribution_setting else 0
 
     # Extract year and month dynamically
     past_contributions = (
@@ -77,7 +83,7 @@ def dashboard(request):
                 total_arrears += 1
 
     # Required amount to close the year (assuming each month = $100)
-    total_due = total_arrears * 100
+    total_due = total_arrears * monthly_amount
 
     # Determine health status
     if total_arrears == 0:
@@ -98,9 +104,10 @@ def dashboard(request):
         'total_arrears': total_arrears,
         'total_due': total_due,
         'health_status': health_status,
-        'month_names': month_names,  # Pass the list to the template
+        'month_names': month_names,
+        'monthly_amount': monthly_amount,
+        'current_year': current_year,
+        'first_name': user.first_name
     }
 
     return render(request, 'contributions/dashboard.html', context)
-
-

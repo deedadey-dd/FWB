@@ -2,7 +2,7 @@ from django.contrib.auth import authenticate, login, logout
 from django.contrib.auth.decorators import login_required
 from django.shortcuts import render, redirect
 from django.contrib import messages
-from users.forms import CustomUserCreationForm, CustomUserUpdateForm, ContactForm, ChildForm, LoginForm
+from users.forms import CustomUserCreationForm, CustomUserUpdateForm, ContactForm, ChildForm, LoginForm,UserProfileForm
 
 
 def register(request):
@@ -85,3 +85,32 @@ def user_logout(request):
 @login_required
 def dashboard(request):
     return render(request, "users/dashboard.html")
+
+
+@login_required
+def profile(request):
+    if request.method == "POST":
+        form = UserProfileForm(request.POST, instance=request.user)
+        if form.is_valid():
+            form.save()
+            messages.success(request, "Profile updated successfully!")
+            return redirect("profile")
+    else:
+        form = UserProfileForm(instance=request.user)
+
+    return render(request, "users/profile.html", {"form": form})
+
+
+@login_required
+def change_password(request):
+    if request.method == "POST":
+        form = PasswordChangeForm(user=request.user, data=request.POST)
+        if form.is_valid():
+            form.save()
+            update_session_auth_hash(request, request.user)  # Prevents logout after password change
+            messages.success(request, "Password changed successfully!")
+            return redirect("profile")
+    else:
+        form = PasswordChangeForm(user=request.user)
+
+    return render(request, "users/change_password.html", {"form": form})

@@ -1,0 +1,26 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="container mt-5">
+    <h2>Profile</h2>
+    <form method="post">
+        {% csrf_token %}
+        <div class="mb-3">
+            <label>First Name</label>
+            {{ form.first_name }}
+        </div>
+        <div class="mb-3">
+            <label>Last Name</label>
+            {{ form.last_name }}
+        </div>
+        <div class="mb-3">
+            <label>Email</label>
+            {{ form.email }}
+        </div>
+        <div class="mb-3">
+            <label>Phone Number</label>
+            {{ form.phone_number }}
+        </div>
+        <button type="submit" class="btn btn-success">Update Profile</button>
+    </form>
+</div>
+{% endblock %}

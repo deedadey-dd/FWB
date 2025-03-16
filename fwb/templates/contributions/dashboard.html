@@ -1,0 +1,100 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="container mt-4">
+    <h2 class="text-center">User Dashboard</h2>
+
+    {% load custom_filters %}
+
+    <!-- Date and Time -->
+    <div class="alert alert-info text-center">
+        <strong>Current Date & Time: </strong> <span id="datetime"></span>
+    </div>
+
+    <!-- Health Status -->
+    <div class="text-center mb-3">
+        <h4>Contribution Health Status</h4>
+        <span class="badge badge-pill badge-{% if health_status == 'green' %}success{% elif health_status == 'yellow' %}warning{% elif health_status == 'red' %}danger{% else %}primary{% endif %}" style="font-size: 18px;">
+            {% if health_status == 'green' %}
+                ✅ Up to Date
+            {% elif health_status == 'yellow' %}
+                ⚠️ Defaulted 2+ Months
+            {% elif health_status == 'red' %}
+                ❌ Defaulted 4+ Months
+            {% else %}
+                🔵 Paid in Advance
+            {% endif %}
+        </span>
+    </div>
+
+    <!-- Contributions Table -->
+    <div class="card">
+        <div class="card-header bg-primary text-white">
+            <h5>Contribution History</h5>
+        </div>
+        <div class="card-body">
+            <table>
+    <thead>
+        <tr>
+            <th>Year</th>
+            {% for month in month_names %}
+                <th>{{ month }}</th>
+            {% endfor %}
+            <th>Extra</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for year, months in contributions.items %}
+        <tr>
+            <td>{{ year }}</td>
+            {% for month in month_names %}
+                {% with month_index=forloop.counter %}
+                <td>
+                    {% if contributions.year|get_dict_value:month_index %}
+                        ✅  <!-- Green check if contributed -->
+                    {% else %}
+                        ❌  <!-- Red cross if not contributed -->
+                    {% endif %}
+                </td>
+                {% endwith %}
+            {% endfor %}
+
+            <td>Extra Contributions</td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+
+        </div>
+    </div>
+
+    <!-- Arrears and Due Payment -->
+    <div class="row mt-4">
+        <div class="col-md-6">
+            <div class="card bg-warning text-dark">
+                <div class="card-body">
+                    <h5>Arrears</h5>
+                    <h3>GHȻ {{ total_arrears }} Unpaid Months</h3>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-6">
+            <div class="card bg-danger text-white">
+                <div class="card-body">
+                    <h5>Amount Required to Close Year</h5>
+                    <h3>GHȻ {{ total_due }}</h3>
+                </div>
+            </div>
+        </div>
+    </div>
+
+</div>
+
+<!-- Date & Time Script -->
+<script>
+    function updateDateTime() {
+        document.getElementById("datetime").innerText = new Date().toLocaleString();
+    }
+    setInterval(updateDateTime, 1000);
+    updateDateTime();
+</script>
+{% endblock %}

@@ -14,9 +14,6 @@ from pathlib import Path
 import os
 from dotenv import load_dotenv
 
-from django.conf.global_settings import AUTH_USER_MODEL
-
-import users.models
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -37,14 +34,14 @@ ALLOWED_HOSTS = []
 # Application definition
 
 INSTALLED_APPS = [
+    'users',
+    'contributions'
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
-    'users',
-    'contributions'
 ]
 
 MIDDLEWARE = [

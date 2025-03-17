@@ -1,0 +1,41 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container mt-4">
+    <h2>Manager Dashboard</h2>
+    <div class="card">
+        <div class="card-body">
+            <table class="table table-bordered text-center">
+                <thead>
+                    <tr>
+                        <th>Name</th>
+                        {% for month in month_names %}
+                            <th>{{ month }}</th>
+                        {% endfor %}
+                        <th>Total Paid</th>
+                        <th>Due (Up to Date)</th>
+                        <th>Due (Full Year)</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for user in user_data %}
+                    <tr>
+                        <td>{{ user.name }}</td>
+                        {% for amount in user.monthly_contributions %}
+                            <td>{{ amount }}</td>
+                        {% endfor %}
+                        <td><strong>{{ user.total_paid }}</strong></td>
+                        <td class="text-warning"><strong>{{ user.due_up_to_date }}</strong></td>
+                        <td class="text-danger"><strong>{{ user.due_full_year }}</strong></td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="16" class="text-center">No contributions found</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -7,7 +7,7 @@ from django.contrib.auth.forms import PasswordChangeForm
 
 
 def home():
-    return redirect('home')
+    return redirect('user_login')
 
 
 def register(request):

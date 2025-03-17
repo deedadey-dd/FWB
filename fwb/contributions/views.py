@@ -10,6 +10,7 @@ from .utils import allocate_contribution
 from django.db.models.functions import ExtractYear, ExtractMonth
 from django.db.models import Sum
 from datetime import datetime
+from users.models import CustomUser
 
 
 def is_manager(user):
@@ -111,3 +112,60 @@ def dashboard(request):
     }
 
     return render(request, 'contributions/dashboard.html', context)
+
+
+@login_required
+@user_passes_test(lambda u: u.is_staff)  # Only managers can access
+def manager_dashboard(request):
+    current_year = datetime.now().year
+    current_month = datetime.now().month
+
+    # Fetch contribution setting (amount per month)
+    try:
+        contribution_setting = ContributionSetting.objects.get(year=current_year)
+        monthly_amount = contribution_setting.amount
+    except ContributionSetting.DoesNotExist:
+        monthly_amount = 0  # Default if not set
+
+    # List of all users
+    users = CustomUser.objects.all()
+
+    # Months mapping
+    month_names = [
+        "January", "February", "March", "April", "May", "June",
+        "July", "August", "September", "October", "November", "December"
+    ]
+
+    user_data = []
+
+    for user in users:
+        # Get the total contributions grouped by month
+        contributions = (
+            Contribution.objects.filter(user=user, date_contributed__year=current_year)
+            .values("date_contributed__month")
+            .annotate(total_paid=Sum("amount"))
+        )
+
+        # Create a dictionary for contributions per month
+        contributions_dict = {entry["date_contributed__month"]: entry["total_paid"] for entry in contributions}
+
+        # Prepare row data
+        row = {
+            "name": f"{user.first_name} {user.last_name}",
+            "monthly_contributions": [],
+            "total_paid": sum(contributions_dict.values()),
+            "due_up_to_date": max(0, (current_month * monthly_amount) - sum(contributions_dict.values())),
+            "due_full_year": max(0, (12 * monthly_amount) - sum(contributions_dict.values())),
+        }
+
+        # Populate monthly contributions
+        for month_index in range(1, 13):  # 1 to 12
+            row["monthly_contributions"].append(contributions_dict.get(month_index, 0))
+
+        user_data.append(row)
+
+    return render(request, "contributions/manager_dashboard.html", {
+        "user_data": user_data,
+        "month_names": month_names,
+    })
+

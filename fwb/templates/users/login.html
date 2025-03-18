@@ -2,7 +2,7 @@
 {% block content %}
 <div class="container mt-5">
     <div class="row justify-content-center">
-        <div class="col-md-6">
+        <div class="col-md-3">
             <h2 class="text-center">Login</h2>
             <form method="post">
                 {% csrf_token %}
@@ -16,8 +16,10 @@
                 </div>
                 <button type="submit" class="btn btn-primary w-100">Login</button>
             </form>
+
             <p class="text-center">
-                <a href="{% url 'password_reset' %}">Forgot Password?</a>
+                <a href="{% url 'password_reset' %}" class="me-3">Forgot Password?</a>
+                <a href="{% url 'register' %}">Register</a>
             </p>
 
         </div>

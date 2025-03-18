@@ -1,13 +1,129 @@
 {% extends "base.html" %}
 {% block content %}
 <div class="container">
-    <h2 class="my-4">Register</h2>
+    <h2 class="my-4 text-center">Register</h2>
     <form method="post">
         {% csrf_token %}
-        <div class="mb-3">
-            {{ form.as_p }}
+
+        <!-- First Row: Username, Email, Phone Number -->
+        <div class="row g-3">
+            <div class="col-md-4">
+                <label for="{{ form.username.id_for_label }}" class="form-label fw-bold">Username</label>
+                {{ form.username }}
+                {% for error in form.username.errors %}
+                    <div class="text-danger">{{ error }}</div>
+                {% endfor %}
+            </div>
+            <div class="col-md-4">
+                <label for="{{ form.email.id_for_label }}" class="form-label fw-bold">Email</label>
+                {{ form.email }}
+                {% for error in form.email.errors %}
+                    <div class="text-danger">{{ error }}</div>
+                {% endfor %}
+            </div>
+            <div class="col-md-4">
+                <label for="{{ form.phone_number.id_for_label }}" class="form-label fw-bold">Phone Number</label>
+                {{ form.phone_number }}
+                {% for error in form.phone_number.errors %}
+                    <div class="text-danger">{{ error }}</div>
+                {% endfor %}
+            </div>
         </div>
-        <button type="submit" class="btn btn-primary">Register</button>
+
+        <!-- Second Row: First Name, Surname, Other Names -->
+        <div class="row g-3 mt-3">
+            <div class="col-md-4">
+                <label for="{{ form.first_name.id_for_label }}" class="form-label fw-bold">First Name</label>
+                {{ form.first_name }}
+                {% for error in form.first_name.errors %}
+                    <div class="text-danger">{{ error }}</div>
+                {% endfor %}
+            </div>
+            <div class="col-md-4">
+                <label for="{{ form.last_name.id_for_label }}" class="form-label fw-bold">Surname</label>
+                {{ form.last_name }}
+                {% for error in form.last_name.errors %}
+                    <div class="text-danger">{{ error }}</div>
+                {% endfor %}
+            </div>
+            <div class="col-md-4">
+                <label for="{{ form.other_names.id_for_label }}" class="form-label fw-bold">Other Names</label>
+                {{ form.other_names }}
+                {% for error in form.other_names.errors %}
+                    <div class="text-danger">{{ error }}</div>
+                {% endfor %}
+            </div>
+        </div>
+
+        <!-- Third Row: Date of Birth, Hometown, Residence -->
+       <div class="row g-3 mt-3">
+            <!-- Left Column: Date of Birth (Top) & Password1 (Bottom) -->
+            <div class="col-md-4">
+                <div class="mb-3">
+                    <label for="{{ form.date_of_birth.id_for_label }}" class="form-label fw-bold">Date of Birth</label>
+                    {{ form.date_of_birth }}
+                    {% for error in form.date_of_birth.errors %}
+                        <div class="text-danger">{{ error }}</div>
+                    {% endfor %}
+                </div>
+                <div>
+                    <label for="{{ form.password1.id_for_label }}" class="form-label fw-bold">Password</label>
+                    {{ form.password1 }}
+                    {% for error in form.password1.errors %}
+                        <div class="text-danger">{{ error }}</div>
+                    {% endfor %}
+                </div>
+            </div>
+
+            <!-- Middle Column: Hometown (Top) & Password2 (Bottom) -->
+            <div class="col-md-4">
+                <div class="mb-3">
+                    <label for="{{ form.hometown.id_for_label }}" class="form-label fw-bold">Hometown</label>
+                    {{ form.hometown }}
+                    {% for error in form.hometown.errors %}
+                        <div class="text-danger">{{ error }}</div>
+                    {% endfor %}
+                </div>
+                <div>
+                    <label for="{{ form.password2.id_for_label }}" class="form-label fw-bold">Confirm Password</label>
+                    {{ form.password2 }}
+                    {% for error in form.password2.errors %}
+                        <div class="text-danger">{{ error }}</div>
+                    {% endfor %}
+                </div>
+            </div>
+
+            <!-- Right Column: Residence (Fills Entire Column) -->
+            <div class="col-md-4">
+                <label for="{{ form.residence.id_for_label }}" class="form-label fw-bold">Residence</label>
+                {{ form.residence }}
+                {% for error in form.residence.errors %}
+                    <div class="text-danger">{{ error }}</div>
+                {% endfor %}
+            </div>
+        </div>
+
+
+
+<!--        &lt;!&ndash; Fourth Row: Password and Confirm Password &ndash;&gt;-->
+<!--        <div class="row g-3 mt-3">-->
+<!--            <div class="col-md-6">-->
+<!--                <label for="{{ form.password1.id_for_label }}" class="form-label fw-bold">Password</label>-->
+<!--                {{ form.password1 }}-->
+<!--                {% for error in form.password1.errors %}-->
+<!--                    <div class="text-danger">{{ error }}</div>-->
+<!--                {% endfor %}-->
+<!--            </div>-->
+<!--            <div class="col-md-6">-->
+<!--                <label for="{{ form.password2.id_for_label }}" class="form-label fw-bold">Confirm Password</label>-->
+<!--                {{ form.password2 }}-->
+<!--                {% for error in form.password2.errors %}-->
+<!--                    <div class="text-danger">{{ error }}</div>-->
+<!--                {% endfor %}-->
+<!--            </div>-->
+<!--        </div>-->
+
+        <button type="submit" class="btn btn-primary mt-3 w-100">Register</button>
     </form>
 </div>
 {% endblock %}

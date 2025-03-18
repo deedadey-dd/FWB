@@ -1,0 +1,44 @@
+{% extends 'base.html' %}
+
+{% block title %}Contribution Records{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <h2 class="mb-4 text-center">Contribution Records</h2>
+
+    {% if contributions %}
+        <div class="table-responsive">
+            <table class="table table-bordered table-striped">
+                <thead class="thead-dark">
+                    <tr>
+                        <th>Contributor</th>
+                        <th>Amount</th>
+                        <th>Recorded By</th>
+                        <th>Date & Time</th>
+                        <th>Type</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for contribution in contributions %}
+                    <tr>
+                        <td>{{ contribution.user.get_full_name }}</td>
+                        <td>₵{{ contribution.amount|floatformat:2 }}</td>
+                        <td>{{ contribution.recorded_by.get_full_name }}</td>
+                        <td>{{ contribution.date_contributed|date:"M d, Y - H:i A" }}</td>
+                        <td>
+                            {% if contribution.contribution_type == "monthly" %}
+                                <span class="badge bg-primary">Monthly</span>
+                            {% else %}
+                                <span class="badge bg-success">Extra</span>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    {% else %}
+        <div class="alert alert-info text-center">No contributions recorded yet.</div>
+    {% endif %}
+</div>
+{% endblock %}

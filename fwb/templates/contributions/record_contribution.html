@@ -3,7 +3,7 @@
 {% block title %}Record Contribution{% endblock %}
 
 {% block content %}
-<div class="d-flex justify-content-center align-items-center vh-100">
+<div class="d-flex justify-content-center align-items-center">
     <div class="card p-4 shadow" style="width: 400px;">
         <div class="card-body">
             <h2 class="text-center mb-4">Record a Contribution</h2>
@@ -26,17 +26,34 @@
                     {% endfor %}
                 </div>
 
-                <div class="mb-3">
-<!--                    <label for="{{ form.contribution_type.id_for_label }}" class="form-label fw-bold">Contribution Type</label>-->
-                    {{ form.contribution_type }}
-                    {% for error in form.contribution_type.errors %}
-                        <div class="text-danger">{{ error }}</div>
-                    {% endfor %}
-                </div>
+                <label for="contribution_type">Contribution Type:</label>
+                    <select id="contribution_type" name="contribution_type" class="form-control" required>
+                        <option value="monthly">Monthly</option>
+                        <option value="extra">Extra</option>
+                    </select>
+
+                    <div id="reason_field" style="display: none; margin-top: 10px;">
+                        <label for="id_previous_reason">Select Previous Reason:</label>
+                        {{ form.previous_reason }}
+
+                        <label for="id_new_reason" class="mt-2">New Reason (if not in list):</label>
+                        {{ form.new_reason }}
+                    </div>
 
                 <button type="submit" class="btn btn-primary w-100">Save Contribution</button>
             </form>
         </div>
     </div>
 </div>
+
+<script>
+    document.getElementById("contribution_type").addEventListener("change", function() {
+        var reasonField = document.getElementById("reason_field");
+        if (this.value === "extra") {
+            reasonField.style.display = "block";
+        } else {
+            reasonField.style.display = "none";
+        }
+    });
+</script>
 {% endblock %}

@@ -13,7 +13,8 @@ class CustomUser(AbstractUser):
     hometown = models.CharField(max_length=100, null=True, blank=True)
 
     def __str__(self):
-        return f'{self.first_name} {self.other_names} {self.last_name}'
+        other_names_display = self.other_names or ""
+        return f'{self.first_name} {other_names_display} {self.last_name}'
 
 
 class Contact(models.Model):

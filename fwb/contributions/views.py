@@ -4,7 +4,7 @@ from django.contrib import messages
 from django.contrib.auth.decorators import login_required, user_passes_test
 from django.core.mail import send_mail
 from django.utils.timezone import now
-from .models import Contribution, ContributionSetting, ContributionRecord
+from .models import Contribution, ContributionSetting, ContributionRecord, ExtraContribution
 from .forms import ContributionForm
 from .utils import allocate_contribution
 from django.db.models.functions import ExtractYear, ExtractMonth
@@ -12,42 +12,107 @@ from django.db.models import Sum
 from datetime import datetime
 from users.models import CustomUser
 from django.contrib import messages
+from collections import defaultdict
 
 
 def is_manager(user):
     return user.is_authenticated and user.is_staff  # Ensure `is_manager` exists in the user model
 
 
+# @login_required
+# @user_passes_test(is_manager)
+# def record_contribution(request):
+#     if not request.user.is_staff:  # Only managers can enter contributions
+#         messages.error(request, "You do not have permission to record contributions.")
+#         return redirect("home")
+#
+#     if request.method == "POST":
+#         form = ContributionForm(request.POST)
+#         if form.is_valid():
+#             contribution = form.save(commit=False)
+#             contribution.recorded_by = request.user
+#
+#             try:
+#                 # Save a bulk record before allocating it to unpaid months
+#                 contribution_record = ContributionRecord.objects.create(
+#                     user=contribution.user,
+#                     amount=contribution.amount,
+#                     contribution_type=contribution.contribution_type,
+#                     recorded_by=request.user
+#                 )
+#
+#                 # Allocate the contribution if it's a monthly one
+#                 if contribution.contribution_type == "Monthly":
+#                     allocate_contribution(contribution.user, contribution.amount, contribution.date_contributed)
+#                 # If it is an extra contribution, save it as such.
+#                 else:
+#                     reason = form.cleaned_data["new_reason"] or form.cleaned_data["previous_reason"]
+#                     extra_contribution = ExtraContribution.objects.create(
+#                         user=request.user,
+#                         amount=contribution.amount,
+#                         reason=reason
+#                     )
+#                     extra_contribution.save()
+#
+#                 # Send Email Notification
+#                 send_mail(
+#                     "Contribution Recorded",
+#                     f"Dear {contribution.user.first_name},\n\nAn amount of {contribution.amount} has been recorded for you as {contribution.contribution_type} contribution.\n\nThank you!",
+#                     "deedadey@vivaldi.net",
+#                     [contribution.user.email],
+#                     fail_silently=True,
+#                 )
+#
+#                 messages.success(request, "Contribution recorded successfully.")
+#                 return redirect("record_contribution")
+#             except Exception as e:
+#                 messages.error(request, f"An error occurred: {e}")
+#
+#     else:
+#         form = ContributionForm()
+#
+#     return render(request, "contributions/record_contribution.html", {"form": form})
+
+
 @login_required
 @user_passes_test(is_manager)
 def record_contribution(request):
-    if not request.user.is_staff:  # Only managers can enter contributions
+    if not request.user.is_staff:
         messages.error(request, "You do not have permission to record contributions.")
         return redirect("home")
 
     if request.method == "POST":
-        form = ContributionForm(request.POST)
+        form = ContributionForm(request.POST, user=request.user)
         if form.is_valid():
             contribution = form.save(commit=False)
             contribution.recorded_by = request.user
 
             try:
-                # Save a bulk record before allocating it to unpaid months
-                contribution_record = ContributionRecord.objects.create(
+                # Save the contribution record
+                ContributionRecord.objects.create(
                     user=contribution.user,
                     amount=contribution.amount,
                     contribution_type=contribution.contribution_type,
                     recorded_by=request.user
                 )
 
-                # Allocate the contribution if it's a monthly one
+                # Allocate if it's a monthly contribution
                 if contribution.contribution_type == "monthly":
                     allocate_contribution(contribution.user, contribution.amount, contribution.date_contributed)
 
-                # Send Email Notification
+                else:  # Extra Contribution
+                    reason = form.cleaned_data["new_reason"] or form.cleaned_data["previous_reason"]
+                    if reason:
+                        ExtraContribution.objects.create(
+                            user=contribution.user,
+                            amount=contribution.amount,
+                            reason=reason
+                        )
+
+                # Send notification email
                 send_mail(
                     "Contribution Recorded",
-                    f"Dear {contribution.user.first_name},\n\nA contribution of {contribution.amount} has been recorded for you.\n\nThank you!",
+                    f"Dear {contribution.user.first_name},\n\nAn amount of {contribution.amount} has been recorded for you as {contribution.contribution_type} contribution.\n\nThank you!",
                     "deedadey@vivaldi.net",
                     [contribution.user.email],
                     fail_silently=True,
@@ -59,7 +124,7 @@ def record_contribution(request):
                 messages.error(request, f"An error occurred: {e}")
 
     else:
-        form = ContributionForm()
+        form = ContributionForm(user=request.user)
 
     return render(request, "contributions/record_contribution.html", {"form": form})
 
@@ -71,12 +136,15 @@ def dashboard(request):
     contribution_setting = ContributionSetting.objects.filter(year=current_year).first()
     monthly_amount = contribution_setting.amount if contribution_setting else 0
 
-    # Extract year and month dynamically
+    # Fetching standard contributions
     past_contributions = (
         Contribution.objects.filter(user=user)
         .annotate(year=ExtractYear('date_contributed'), month=ExtractMonth('date_contributed'))
         .order_by('-year', '-month')
     )
+
+    # Fetching extra contributions
+    extra_contributions = ExtraContribution.objects.filter(user=user).order_by('-date_contributed')
 
     # Organizing data into a dictionary format
     contributions = {}
@@ -95,7 +163,7 @@ def dashboard(request):
                 months[month] = False
                 total_arrears += 1
 
-    # Required amount to close the year (assuming each month = $100)
+    # Required amount to close the year
     total_due = total_arrears * monthly_amount
 
     # Determine health status
@@ -111,6 +179,17 @@ def dashboard(request):
     # List of month names
     month_names = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"]
 
+    # Fetch extra contributions and group by reason
+    extra_contributions = (
+        ExtraContribution.objects.filter(user=user)
+        .values("reason")
+        .annotate(total_amount=Sum("amount"))
+    )
+
+    # Extract first word of each reason
+    extra_contributions_dict = {reason.split()[0]: total_amount for reason, total_amount in
+                                extra_contributions.values_list("reason", "total_amount") if reason is not None}
+
     context = {
         'current_date': current_date,
         'contributions': contributions,
@@ -120,10 +199,12 @@ def dashboard(request):
         'month_names': month_names,
         'monthly_amount': monthly_amount,
         'current_year': current_year,
-        'first_name': user.first_name
+        'first_name': user.first_name,
+        'extra_contributions_dict': extra_contributions_dict,  # Include extra contributions
     }
 
     return render(request, 'contributions/dashboard.html', context)
+
 
 
 @login_required
@@ -217,3 +298,60 @@ def view_contributions(request):
 
     return render(request, "contributions/contributions_list.html", {"contributions": contributions})
 
+@login_required
+@user_passes_test(lambda u: u.is_staff)
+def extra_contributions_view(request):
+    selected_year = request.GET.get("year")
+    current_year = datetime.now().year
+    year = int(selected_year) if selected_year else current_year
+    years = list(range(2020, current_year + 1))
+
+    # Fetch extra contributions (excluding 'Regular')
+    extra_contributions = ExtraContribution.objects.filter(date_contributed__year=year)
+
+    # Calculate Total Extra Contributions
+    total_extra_contributions = extra_contributions.aggregate(total=Sum("amount"))["total"] or 0
+
+    # Group by reason and calculate totals
+    reason_contributions = extra_contributions.reason
+
+    # Expected total per reason (modify this as needed)
+    expected_per_reason = {
+        "Building Fund": 50000,
+        "Missions": 20000,
+        "Special Offering": 10000,
+    }
+
+    # Prepare data for table
+    user_contributions = defaultdict(lambda: defaultdict(int))
+    for contribution in extra_contributions:
+        user_contributions[contribution.user][contribution.contribution_type] += contribution.amount
+
+    user_data = [
+        {
+            "name": f"{user.first_name} {user.last_name}",
+            "extra_contributions": contributions,
+            "total_paid": sum(contributions.values()),
+        }
+        for user, contributions in user_contributions.items()
+    ]
+
+    # Get unique reasons
+    extra_reasons = list(extra_contributions.values_list("contribution_type", flat=True).distinct())
+
+    # Calculate actual vs expected per reason
+    reason_summary = []
+    for reason in extra_reasons:
+        actual_total = next((r["total"] for r in reason_contributions if r["contribution_type"] == reason), 0)
+        expected_total = expected_per_reason.get(reason, 0)
+        percentage = (actual_total / expected_total * 100) if expected_total > 0 else 0
+        reason_summary.append({"reason": reason, "actual": actual_total, "expected": expected_total, "percentage": round(percentage, 2)})
+    print(extra_reasons)
+    return render(request, "contributions/extra_contributions.html", {
+        "user_data": user_data,
+        "year": year,
+        "years": years,
+        "extra_reasons": extra_reasons,
+        "total_extra_contributions": total_extra_contributions,
+        "reason_summary": reason_summary,
+    })

@@ -42,7 +42,9 @@
                         {% for month in month_names %}
                             <th>{{ month }}</th>
                         {% endfor %}
-                        <th>Extra</th>
+                        {% for reason in extra_contributions_dict.keys %}
+                            <th>{{ reason }}</th>
+                        {% endfor %}
                     </tr>
                 </thead>
                 <tbody>
@@ -51,19 +53,22 @@
                         <td><strong>{{ year }}</strong></td>
                         {% for month in month_names %}
                             {% with month_index=forloop.counter %}
-                            <td>
-                                {% if contributions|get_dict_value:year|get_dict_value:month_index %}
-                                    <span class="text-success fw-bold">✅</span> <!-- Green check -->
-                                {% else %}
-                                    <span class="text-danger fw-bold">❌</span> <!-- Red cross -->
-                                {% endif %}
-                            </td>
+                                <td>
+                                    {% if contributions|get_dict_value:year|get_dict_value:month_index %}
+                                        <span class="text-success fw-bold">✅</span>
+                                    {% else %}
+                                        <span class="text-danger fw-bold">❌</span>
+                                    {% endif %}
+                                </td>
                             {% endwith %}
                         {% endfor %}
-                        <td class="fw-bold">Extra Contributions</td>
+                        {% for reason, amount in extra_contributions_dict.items %}
+                            <td>GH₵ {{ amount }}</td>
+                        {% endfor %}
                     </tr>
                     {% endfor %}
                 </tbody>
+
             </table>
         </div>
     </div>

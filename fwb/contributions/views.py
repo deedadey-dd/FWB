@@ -129,52 +129,128 @@ def record_contribution(request):
     return render(request, "contributions/record_contribution.html", {"form": form})
 
 
+# def dashboard(request):
+#     user = request.user
+#     current_date = now()
+#     current_year = datetime.now().year
+#     contribution_setting = ContributionSetting.objects.filter(year=current_year).first()
+#     monthly_amount = contribution_setting.amount if contribution_setting else 0
+#
+#     # Fetching standard contributions
+#     past_contributions = (
+#         Contribution.objects.filter(user=user)
+#         .annotate(year=ExtractYear('date_contributed'), month=ExtractMonth('date_contributed'))
+#         .order_by('-year', '-month')
+#     )
+#
+#     # Fetching extra contributions
+#     extra_contributions = ExtraContribution.objects.filter(user=user).order_by('-date_contributed')
+#
+#     # Organizing data into a dictionary format
+#     contributions = {}
+#     for contrib in past_contributions:
+#         year = contrib.year
+#         month = contrib.month
+#         if year not in contributions:
+#             contributions[year] = {}
+#         contributions[year][month] = True  # Mark as paid
+#
+#     # Arrears calculation (unpaid months)
+#     total_arrears = 0
+#     for year, months in contributions.items():
+#         for month in range(1, 13):  # Loop through all months
+#             if month not in months:  # If a month is missing, it means unpaid
+#                 months[month] = False
+#                 total_arrears += 1
+#
+#     # Required amount to close the year
+#     total_due = total_arrears * monthly_amount
+#
+#     # Determine health status
+#     if total_arrears == 0:
+#         health_status = "green"
+#     elif total_arrears <= 2:
+#         health_status = "yellow"
+#     elif total_arrears >= 4:
+#         health_status = "red"
+#     else:
+#         health_status = "blue"  # Paid in advance
+#
+#     # List of month names
+#     month_names = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"]
+#
+#     # Fetch extra contributions and group by reason
+#     extra_contributions = (
+#         ExtraContribution.objects.filter(user=user)
+#         .values("reason")
+#         .annotate(total_amount=Sum("amount"))
+#     )
+#
+#     # Extract first word of each reason
+#     extra_contributions_dict = {reason.split()[0]: total_amount for reason, total_amount in
+#                                 extra_contributions.values_list("reason", "total_amount") if reason is not None}
+#
+#     context = {
+#         'current_date': current_date,
+#         'contributions': contributions,
+#         'total_arrears': total_arrears,
+#         'total_due': total_due,
+#         'health_status': health_status,
+#         'month_names': month_names,
+#         'monthly_amount': monthly_amount,
+#         'current_year': current_year,
+#         'first_name': user.first_name,
+#         'extra_contributions_dict': extra_contributions_dict,  # Include extra contributions
+#     }
+#
+#     return render(request, 'contributions/dashboard.html', context)
+
+
 def dashboard(request):
     user = request.user
     current_date = now()
-    current_year = datetime.now().year
+    current_year = current_date.year
+    current_month = current_date.month  # Get current month
+    last_two_years = [current_year - 1, current_year]  # Last year and this year only
+
     contribution_setting = ContributionSetting.objects.filter(year=current_year).first()
     monthly_amount = contribution_setting.amount if contribution_setting else 0
 
-    # Fetching standard contributions
+    # Fetching standard contributions for the last two years
     past_contributions = (
-        Contribution.objects.filter(user=user)
+        Contribution.objects.filter(user=user, date_contributed__year__in=last_two_years)
         .annotate(year=ExtractYear('date_contributed'), month=ExtractMonth('date_contributed'))
+        .values("year", "month")
+        .annotate(total_amount=Sum("amount"))  # Sum contributions per month
         .order_by('-year', '-month')
     )
 
-    # Fetching extra contributions
-    extra_contributions = ExtraContribution.objects.filter(user=user).order_by('-date_contributed')
-
     # Organizing data into a dictionary format
-    contributions = {}
+    contributions = {year: {month: 0 for month in range(1, 13)} for year in last_two_years}
     for contrib in past_contributions:
-        year = contrib.year
-        month = contrib.month
-        if year not in contributions:
-            contributions[year] = {}
-        contributions[year][month] = True  # Mark as paid
+        contributions[contrib["year"]][contrib["month"]] = contrib["total_amount"]  # Store summed contributions
 
-    # Arrears calculation (unpaid months)
-    total_arrears = 0
-    for year, months in contributions.items():
-        for month in range(1, 13):  # Loop through all months
-            if month not in months:  # If a month is missing, it means unpaid
-                months[month] = False
-                total_arrears += 1
+    # Arrears calculation (only for the current year and up to the current month)
+    arrears_count = sum(1 for month in range(1, current_month + 1) if contributions[current_year][month] < monthly_amount)
 
-    # Required amount to close the year
-    total_due = total_arrears * monthly_amount
+    # Required amount to close arrears
+    total_due = sum(max(monthly_amount - contributions[current_year][month], 0) for month in range(1, current_month + 1))
 
-    # Determine health status
-    if total_arrears == 0:
-        health_status = "green"
-    elif total_arrears <= 2:
-        health_status = "yellow"
-    elif total_arrears >= 4:
-        health_status = "red"
+    # Determine health status based on months missed (arrears_count)
+    if arrears_count == 0:
+        health_status = "green"  # Fully up to date
+    elif arrears_count <= 2:
+        health_status = "yellow"  # 1 or 2 months behind
+    elif arrears_count >= 4:
+        health_status = "red"  # More than 4 months behind
     else:
         health_status = "blue"  # Paid in advance
+
+    # Calculate total_due_year_end (amount needed to complete the year)
+    total_due_year_end = total_due  # Start with the total needed to catch up
+
+    for month in range(current_month + 1, 13):  # Loop from next month to December
+        total_due_year_end += monthly_amount  # Add the monthly amount for each remaining month
 
     # List of month names
     month_names = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"]
@@ -186,25 +262,29 @@ def dashboard(request):
         .annotate(total_amount=Sum("amount"))
     )
 
-    # Extract first word of each reason
-    extra_contributions_dict = {reason.split()[0]: total_amount for reason, total_amount in
-                                extra_contributions.values_list("reason", "total_amount") if reason is not None}
+    extra_contributions_dict = {
+        reason.split()[0]: total_amount for reason, total_amount in extra_contributions.values_list("reason", "total_amount") if reason is not None
+    }
 
     context = {
         'current_date': current_date,
         'contributions': contributions,
-        'total_arrears': total_arrears,
+        'total_arrears': arrears_count,
         'total_due': total_due,
         'health_status': health_status,
         'month_names': month_names,
         'monthly_amount': monthly_amount,
         'current_year': current_year,
+        'last_two_years': last_two_years,  # Send last two years to template
+        'current_month': current_month,  # Pass the current month to the template
         'first_name': user.first_name,
-        'extra_contributions_dict': extra_contributions_dict,  # Include extra contributions
+        'extra_contributions_dict': extra_contributions_dict,
+        'month_range': range(1, 13),
+        'total_due_year_end': total_due_year_end,
+
     }
 
     return render(request, 'contributions/dashboard.html', context)
-
 
 
 @login_required
@@ -298,6 +378,7 @@ def view_contributions(request):
 
     return render(request, "contributions/contributions_list.html", {"contributions": contributions})
 
+
 @login_required
 @user_passes_test(lambda u: u.is_staff)
 def extra_contributions_view(request):
@@ -313,9 +394,13 @@ def extra_contributions_view(request):
     total_extra_contributions = extra_contributions.aggregate(total=Sum("amount"))["total"] or 0
 
     # Group by reason and calculate totals
-    reason_contributions = extra_contributions.reason
+    reason_contributions = (
+        extra_contributions.values("reason")
+        .annotate(total=Sum("amount"))
+        .order_by("reason")
+    )
 
-    # Expected total per reason (modify this as needed)
+    # Expected total per reason
     expected_per_reason = {
         "Building Fund": 50000,
         "Missions": 20000,
@@ -325,7 +410,7 @@ def extra_contributions_view(request):
     # Prepare data for table
     user_contributions = defaultdict(lambda: defaultdict(int))
     for contribution in extra_contributions:
-        user_contributions[contribution.user][contribution.contribution_type] += contribution.amount
+        user_contributions[contribution.user][contribution.reason] += contribution.amount  # ✅ Fix field name
 
     user_data = [
         {
@@ -337,16 +422,18 @@ def extra_contributions_view(request):
     ]
 
     # Get unique reasons
-    extra_reasons = list(extra_contributions.values_list("contribution_type", flat=True).distinct())
+    extra_reasons = list(extra_contributions.values_list("reason", flat=True).distinct())  # ✅ Fix field name
 
     # Calculate actual vs expected per reason
     reason_summary = []
     for reason in extra_reasons:
-        actual_total = next((r["total"] for r in reason_contributions if r["contribution_type"] == reason), 0)
+        actual_total = next((r["total"] for r in reason_contributions if r["reason"] == reason), 0)
         expected_total = expected_per_reason.get(reason, 0)
         percentage = (actual_total / expected_total * 100) if expected_total > 0 else 0
         reason_summary.append({"reason": reason, "actual": actual_total, "expected": expected_total, "percentage": round(percentage, 2)})
+
     print(extra_reasons)
+
     return render(request, "contributions/extra_contributions.html", {
         "user_data": user_data,
         "year": year,

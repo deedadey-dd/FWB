@@ -55,6 +55,7 @@ class ExtraContribution(models.Model):
     def __str__(self):
         return f"{self.user.username} - Extra Contribution: {self.amount}"
 
+
 class ContributionRecord(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE, related_name="contribution_records")
     amount = models.DecimalField(max_digits=10, decimal_places=2)

@@ -2,6 +2,7 @@ from django.db.models import Sum
 from datetime import datetime
 from .models import Contribution, ContributionSetting
 
+
 def allocate_contribution(user, amount, contribution_date):
     """
     Allocate the given amount to the earliest unpaid months in order.

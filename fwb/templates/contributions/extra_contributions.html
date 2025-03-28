@@ -1,0 +1,90 @@
+{% extends "base.html" %}
+{% load custom_filters %}
+
+{% block content %}
+<div class="container mt-4">
+    <h2>Extra Contributions</h2>
+
+    <a href="{% url 'manager_dashboard' %}" class="btn btn-info w-100">Monthly Contributions</a>
+
+    <form method="GET" class="mb-3">
+        <label for="year">Select Year:</label>
+        <select name="year" id="year" class="form-control d-inline-block w-auto">
+            {% for y in years %}
+                <option value="{{ y }}" {% if y == year %}selected{% endif %}>{{ y }}</option>
+            {% endfor %}
+        </select>
+        <button type="submit" class="btn btn-primary">View</button>
+    </form>
+
+    <!-- Summary Section -->
+    <div class="card mb-3">
+        <div class="card-body">
+            <h5 class="card-title">Summary</h5>
+            <p><strong>Total Extra Contributions:</strong> {{ total_extra_contributions }}</p>
+
+            <table class="table table-bordered text-center">
+                <thead>
+                    <tr>
+                        <th>Reason</th>
+                        <th>Actual Contribution</th>
+                        <th>Expected Contribution</th>
+                        <th>Percentage Achieved</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for item in reason_summary %}
+                    <tr>
+                        <td>{{ item.reason }}</td>
+                        <td>{{ item.actual }}</td>
+                        <td>{{ item.expected }}</td>
+                        <td>
+                            <span class="badge {% if item.percentage >= 100 %}bg-success{% elif item.percentage >= 50 %}bg-warning{% else %}bg-danger{% endif %}">
+                                {{ item.percentage }}%
+                            </span>
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="4">No extra contributions found</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- User Contributions Table -->
+    <div class="card">
+        <div class="card-body">
+            <h5 class="card-title">Detailed Contributions</h5>
+            <table class="table table-bordered text-center">
+                <thead>
+                    <tr>
+                        <th>Name</th>
+                        {% for reason in extra_reasons %}
+                            <th>{{ reason }}</th>
+                        {% endfor %}
+                        <th>Total Paid</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for user in user_data %}
+                    <tr>
+                        <td>{{ user.name }}</td>
+                        {% for reason in extra_reasons %}
+                            <td>{{ user.extra_contributions|get_item:reason }}</td>
+                        {% endfor %}
+                        <td><strong>{{ user.total_paid }}</strong></td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="{{ extra_reasons|length|add:2 }}" class="text-center">No extra contributions found</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}

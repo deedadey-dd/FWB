@@ -1,7 +1,7 @@
 {% extends 'base.html' %}
 {% block content %}
 <div class="container mt-4">
-    <h2 class="text-center">Hello {{first_name}} Dashboard</h2>
+    <h2 class="text-center">Hello {{first_name}}</h2>
 
     {% load custom_filters %}
 
@@ -16,7 +16,7 @@
     <!-- Health Status -->
     <div class="text-center mb-3">
         <h4>Contribution Health Status</h4>
-        <span class="badge badge-pill badge-{% if health_status == 'green' %}success{% elif health_status == 'yellow' %}warning{% elif health_status == 'red' %}danger{% else %}primary{% endif %}" style="font-size: 18px;">
+        <span class="badge badge-pill badge-{% if health_status == 'green' %}success{% elif health_status == 'yellow' %}warning{% elif health_status == 'red' %}danger{% else %}primary{% endif %} text-dark" style="font-size: 18px;">
             {% if health_status == 'green' %}
                 ✅ Up to Date
             {% elif health_status == 'yellow' %}
@@ -42,28 +42,65 @@
                         {% for month in month_names %}
                             <th>{{ month }}</th>
                         {% endfor %}
-                        <th>Extra</th>
+                        {% for reason in extra_contributions_dict.keys %}
+                            <th>{{ reason }}</th>
+                        {% endfor %}
                     </tr>
                 </thead>
                 <tbody>
-                    {% for year, months in contributions.items %}
-                    <tr>
-                        <td><strong>{{ year }}</strong></td>
-                        {% for month in month_names %}
-                            {% with month_index=forloop.counter %}
+<!--                    {% for year, months in contributions.items %}-->
+<!--                    <tr>-->
+<!--                        <td><strong>{{ year }}</strong></td>-->
+<!--                        {% for month in month_names %}-->
+<!--                            {% with month_index=forloop.counter %}-->
+<!--                                <td>-->
+<!--                                    {% if contributions|get_dict_value:year|get_dict_value:month_index %}-->
+<!--                                        <span class="text-success fw-bold">✅</span>-->
+<!--                                    {% else %}-->
+<!--                                        <span class="text-danger fw-bold">❌</span>-->
+<!--                                    {% endif %}-->
+<!--                                </td>-->
+<!--                            {% endwith %}-->
+<!--                        {% endfor %}-->
+<!--                        {% for reason, amount in extra_contributions_dict.items %}-->
+<!--                            <td>GH₵ {{ amount }}</td>-->
+<!--                        {% endfor %}-->
+<!--                    </tr>-->
+<!--                    {% endfor %}-->
+
+                    {% for year in last_two_years %}
+                        <tr>
+                            <td>{{ year }}</td>
+                            {% for month_index in month_range %}
                             <td>
-                                {% if contributions|get_dict_value:year|get_dict_value:month_index %}
-                                    <span class="text-success fw-bold">✅</span> <!-- Green check -->
-                                {% else %}
-                                    <span class="text-danger fw-bold">❌</span> <!-- Red cross -->
-                                {% endif %}
-                            </td>
-                            {% endwith %}
-                        {% endfor %}
-                        <td class="fw-bold">Extra Contributions</td>
-                    </tr>
+                                {% with contributions|get_dict_value:year|get_dict_value:month_index as amount %}
+                                    {% if amount %}
+                                        {% if amount >= monthly_amount %}
+                                            <span class="text-success fw-bold">✅</span>
+                                        {% elif amount > 0 %}
+                                            <span class="text-warning fw-bold">⚠️</span>
+                                        {% else %}
+                                            {% if year == current_year and month_index <= current_date.month %}
+                                                <span class="text-danger fw-bold">❌</span>
+                                            {% else %}
+                                                <span class="text-secondary fw-bold">-</span>
+                                            {% endif %}
+                                        {% endif %}
+                                    {% else %}
+                                        {% if year == current_year and month_index <= current_date.month %}
+                                            <span class="text-danger fw-bold">❌</span>
+                                        {% else %}
+                                            <span class="text-secondary fw-bold">-</span>
+                                        {% endif %}
+                                    {% endif %}
+                                {% endwith %}
+                                </td>
+                            {% endfor %}
+                        </tr>
                     {% endfor %}
+
                 </tbody>
+
             </table>
         </div>
     </div>
@@ -74,7 +111,7 @@
             <div class="card bg-warning text-dark">
                 <div class="card-body">
                     <h5>Arrears</h5>
-                    <h3>{{ total_arrears }} Unpaid Months</h3>
+                    <h3>{{ total_arrears }} Unpaid Months (GHȻ {{ total_due }})</h3>
                 </div>
             </div>
         </div>
@@ -82,7 +119,7 @@
             <div class="card bg-danger text-white">
                 <div class="card-body">
                     <h5>Amount Required to Close Year</h5>
-                    <h3>GHȻ {{ total_due }}</h3>
+                    <h3>GHȻ {{ total_due_year_end }}</h3>
                 </div>
             </div>
         </div>

@@ -1,0 +1,72 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container mt-4">
+    <h2>Manager Dashboard</h2>
+
+    <a href="{% url 'extra_contributions' %}" class="btn btn-info w-100">Extra Contributions</a>
+
+    <!-- Year Selection Form -->
+    <form method="GET" class="mb-3">
+        <label for="year">Select Year:</label>
+        <select name="year" id="year" class="form-control d-inline-block w-auto">
+            {% for y in years %}
+                <option value="{{ y }}" {% if y == year %}selected{% endif %}>{{ y }}</option>
+            {% endfor %}
+        </select>
+        <button type="submit" class="btn btn-primary">View</button>
+    </form>
+
+    <h4 class="text-center">Contribution Data for Year {{ year }}</h4>
+
+    <!-- Summary Section -->
+    <div class="card mb-3">
+        <div class="card-body">
+            <h5>Summary</h5>
+            <p><strong>Total Contributions:</strong> GHC {{ total_contributed }}.00</p>
+<!--            <p><strong>Total Expected (Up to Now):</strong> {{ total_expected_up_to_now }}</p>-->
+            <p>Arrears Due (Up to Now): <strong> GHC {{ total_due_up_to_now }}</strong> out of GHC {{ total_expected_up_to_now }}</p>
+<!--            <p><strong>Total Expected (Full Year):</strong> {{ total_expected_full_year }}</p>-->
+            <p>Amount Due (Full Year): <strong> GHC {{ total_due_full_year }}</strong> out of GHC {{ total_expected_full_year }}</p>
+        </div>
+    </div>
+
+    <!-- Contribution Table -->
+    <div class="card">
+        <div class="card-body">
+            <table class="table table-bordered text-center">
+                <thead>
+                    <tr>
+                        <th>Name</th>
+                        {% for month in month_names %}
+                            <th>{{ month }}</th>
+                        {% endfor %}
+                        <th>Total Paid</th>
+                        <th>Due (Up to Date)</th>
+                        <th>Due (Full Year)</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for user in user_data %}
+                    <tr>
+                        <td>{{ user.name }}</td>
+                        {% for amount in user.monthly_contributions %}
+                            <td>{{ amount }}</td>
+                        {% endfor %}
+                        <td><strong>{{ user.total_paid }}</strong></td>
+                        <td class="{% if user.due_up_to_date < 0 %}text-success{% else %}text-warning{% endif %}">
+                            <strong>{{ user.due_up_to_date }}</strong>
+                        </td>
+                        <td class="text-danger"><strong>{{ user.due_full_year }}</strong></td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="16" class="text-center">No contributions found</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}

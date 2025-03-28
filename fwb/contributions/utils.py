@@ -1,14 +1,14 @@
 from django.db.models import Sum
 from datetime import datetime
 from .models import Contribution, ContributionSetting
-from .models import MonthlyContribution
 
 
-def allocate_contribution(user, amount):
+def allocate_contribution(user, amount, contribution_date):
     """
-    Allocate the given amount to the earliest unpaid months.
+    Allocate the given amount to the earliest unpaid months in order.
     """
-    current_year = datetime.now().year
+    current_year = contribution_date.year  # Use the actual year of the contribution
+
     try:
         contribution_setting = ContributionSetting.objects.get(year=current_year)
         monthly_amount = contribution_setting.amount  # The required monthly contribution
@@ -20,9 +20,11 @@ def allocate_contribution(user, amount):
         "July", "August", "September", "October", "November", "December"
     ]
 
-    # Get the user's existing contributions for the current year
+    # Get user's contributions for the current year, grouped by month
     user_contributions = Contribution.objects.filter(
-        user=user, date_contributed__year=current_year, contribution_type="monthly"
+        user=user,
+        date_contributed__year=current_year,
+        contribution_type="monthly"
     ).values("date_contributed__month").annotate(total=Sum("amount"))
 
     # Create a dictionary to track paid months
@@ -30,11 +32,11 @@ def allocate_contribution(user, amount):
 
     remaining_amount = amount
 
-    for month_index, month_name in enumerate(months, start=1):
+    # **Start from the earliest unpaid month, not from January always**
+    for month_index in range(1, 13):  # Months are indexed from 1 (Jan) to 12 (Dec)
         if remaining_amount <= 0:
             break  # Stop if no amount is left to allocate
 
-        # Get how much has been paid for this month
         paid_so_far = paid_months.get(month_index, 0)
         due = max(monthly_amount - paid_so_far, 0)  # Amount still due for this month
 
@@ -43,10 +45,8 @@ def allocate_contribution(user, amount):
             Contribution.objects.create(
                 user=user,
                 amount=allocation,
-                date_contributed=datetime(current_year, month_index, 1),
+                date_contributed=datetime(current_year, month_index, 1),  # Assign correct month
                 contribution_type="monthly",
-                recorded_by=user  # Assuming the recorded_by is the same user, adjust if needed
+                recorded_by=user  # Ensure the correct manager records it
             )
             remaining_amount -= allocation  # Deduct the allocated amount
-
-

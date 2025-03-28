@@ -236,21 +236,33 @@ def dashboard(request):
     # Required amount to close arrears
     total_due = sum(max(monthly_amount - contributions[current_year][month], 0) for month in range(1, current_month + 1))
 
-    # Determine health status based on months missed (arrears_count)
-    if arrears_count == 0:
+    # Identify **advance payments** (amount paid beyond required)
+    total_paid_this_year = sum(contributions[current_year].values())  # Sum all contributions for current year
+    expected_payment = current_month * monthly_amount  # Amount user should have paid by now
+
+    advance_payment = max(0, total_paid_this_year - expected_payment)  # Extra amount paid
+
+    # Convert advance payments into covered months
+    months_covered_by_advance = advance_payment // monthly_amount
+
+    # Remaining months in the year
+    months_remaining = 12 - current_month
+
+    # Adjust `total_due_year_end`
+    months_due = max(0, months_remaining - months_covered_by_advance)
+    total_due_year_end = months_due * monthly_amount
+
+    # Determine health status
+    if arrears_count == 0 and months_covered_by_advance == 0:
         health_status = "green"  # Fully up to date
+    elif months_covered_by_advance > 0:
+        health_status = "blue"  # Paid in advance
     elif arrears_count <= 2:
         health_status = "yellow"  # 1 or 2 months behind
     elif arrears_count >= 4:
         health_status = "red"  # More than 4 months behind
     else:
-        health_status = "blue"  # Paid in advance
-
-    # Calculate total_due_year_end (amount needed to complete the year)
-    total_due_year_end = total_due  # Start with the total needed to catch up
-
-    for month in range(current_month + 1, 13):  # Loop from next month to December
-        total_due_year_end += monthly_amount  # Add the monthly amount for each remaining month
+        health_status = "green"
 
     # List of month names
     month_names = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"]
@@ -275,13 +287,13 @@ def dashboard(request):
         'month_names': month_names,
         'monthly_amount': monthly_amount,
         'current_year': current_year,
-        'last_two_years': last_two_years,  # Send last two years to template
-        'current_month': current_month,  # Pass the current month to the template
+        'last_two_years': last_two_years,
+        'current_month': current_month,
         'first_name': user.first_name,
         'extra_contributions_dict': extra_contributions_dict,
         'month_range': range(1, 13),
         'total_due_year_end': total_due_year_end,
-
+        'advance_payment': advance_payment,
     }
 
     return render(request, 'contributions/dashboard.html', context)
@@ -307,11 +319,8 @@ def manager_dashboard(request):
     # List of all users
     users = CustomUser.objects.filter(is_staff=False)
 
-    # Months mapping
-    month_names = [
-        "January", "February", "March", "April", "May", "June",
-        "July", "August", "September", "October", "November", "December"
-    ]
+    # List of month names
+    month_names = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"]
 
     user_data = []
     total_contributed = 0  # Track total contributions for the year

@@ -15,7 +15,7 @@
 
     <!-- Health Status -->
     <div class="text-center mb-3">
-        <h4>Contribution Health Status</h4>
+<!--        <h4>Contribution Health Status</h4>-->
         <span class="badge badge-pill badge-{% if health_status == 'green' %}success{% elif health_status == 'yellow' %}warning{% elif health_status == 'red' %}danger{% else %}primary{% endif %} text-dark" style="font-size: 18px;">
             {% if health_status == 'green' %}
                 ✅ Up to Date
@@ -48,26 +48,6 @@
                     </tr>
                 </thead>
                 <tbody>
-<!--                    {% for year, months in contributions.items %}-->
-<!--                    <tr>-->
-<!--                        <td><strong>{{ year }}</strong></td>-->
-<!--                        {% for month in month_names %}-->
-<!--                            {% with month_index=forloop.counter %}-->
-<!--                                <td>-->
-<!--                                    {% if contributions|get_dict_value:year|get_dict_value:month_index %}-->
-<!--                                        <span class="text-success fw-bold">✅</span>-->
-<!--                                    {% else %}-->
-<!--                                        <span class="text-danger fw-bold">❌</span>-->
-<!--                                    {% endif %}-->
-<!--                                </td>-->
-<!--                            {% endwith %}-->
-<!--                        {% endfor %}-->
-<!--                        {% for reason, amount in extra_contributions_dict.items %}-->
-<!--                            <td>GH₵ {{ amount }}</td>-->
-<!--                        {% endfor %}-->
-<!--                    </tr>-->
-<!--                    {% endfor %}-->
-
                     {% for year in last_two_years %}
                         <tr>
                             <td>{{ year }}</td>

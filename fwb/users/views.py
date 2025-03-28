@@ -2,12 +2,18 @@ from django.contrib.auth import authenticate, login, logout, update_session_auth
 from django.contrib.auth.decorators import login_required
 from django.shortcuts import render, redirect
 from django.contrib import messages
+from django.template.context_processors import request
+
 from .forms import CustomUserCreationForm, CustomUserUpdateForm, ContactForm, ChildForm, LoginForm, UserProfileForm
 from django.contrib.auth.forms import PasswordChangeForm
 
 
-def home():
-    return redirect('user_login')
+def home(request):
+    if request.user.is_authenticated:
+        if request.user.is_staff:
+            return redirect('record_contribution')
+        return redirect('dashboard')
+    return redirect('login')
 
 
 def register(request):

@@ -1,32 +1,36 @@
 {% extends 'base.html' %}
 {% block content %}
+{% load custom_filters %}
 <div class="container mt-4">
-    <h2 class="text-center">Hello {{first_name}}</h2>
-
-    {% load custom_filters %}
-
-    <!-- Date and Time -->
-    <div class="alert alert-info text-center">
-        <strong><span id="datetime"></span></strong>
-        <div class="alert alert-info">
-            <h4>Contribution: <strong>GHȻ {{ monthly_amount }}/month</strong> for {{ current_year }}</h4>
+    <div class="row">
+        <div class="col-md-6 card-body">
+            <h2 class="text-center">Hello {{ first_name|title }}</h2>
+            <h4 class="text-center">Welcome to your Dashboard</h4>
+            <br>
+                <!-- Health Status -->
+            <div class="text-center mb-3">
+        <!--        <h4>Contribution Health Status</h4>-->
+                <span class="badge badge-pill badge-{% if health_status == 'green' %}success{% elif health_status == 'yellow' %}warning{% elif health_status == 'red' %}danger{% else %}primary{% endif %} text-dark" style="font-size: 18px;">
+                    {% if health_status == 'green' %}
+                        ✅ You have Paid Up to Date
+                    {% elif health_status == 'yellow' %}
+                        ⚠️ You have Defaulted 2+ Months
+                    {% elif health_status == 'red' %}
+                        ❌ You have Defaulted 4+ Months
+                    {% else %}
+                        🔵 You have Paid in Advance
+                    {% endif %}
+                </span>
+            </div>
         </div>
-    </div>
 
-    <!-- Health Status -->
-    <div class="text-center mb-3">
-<!--        <h4>Contribution Health Status</h4>-->
-        <span class="badge badge-pill badge-{% if health_status == 'green' %}success{% elif health_status == 'yellow' %}warning{% elif health_status == 'red' %}danger{% else %}primary{% endif %} text-dark" style="font-size: 18px;">
-            {% if health_status == 'green' %}
-                ✅ Up to Date
-            {% elif health_status == 'yellow' %}
-                ⚠️ Defaulted 2+ Months
-            {% elif health_status == 'red' %}
-                ❌ Defaulted 4+ Months
-            {% else %}
-                🔵 Paid in Advance
-            {% endif %}
-        </span>
+        <!-- Date and Time -->
+        <div class="alert alert-info text-center col-md-6">
+            <strong><span id="datetime"></span></strong>
+            <div class="alert alert-info">
+                <h4>Contribution: <br> <strong>GHȻ {{ monthly_amount }}/month</strong> for {{ current_year }}</h4>
+            </div>
+        </div>
     </div>
 
     <!-- Contributions Table -->

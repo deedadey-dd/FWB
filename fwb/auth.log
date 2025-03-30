@@ -165,3 +165,211 @@ NameError: name 'filter_option' is not defined
 Not Found: /favicon.ico
 Not Found: /favicon.ico
 Not Found: /favicon.ico
+Not Found: /favicon.ico
+Not Found: /accounts/login/
+Not Found: /accounts/login/
+Not Found: /accounts/login/
+Internal Server Error: /mgt-dashboard/
+Traceback (most recent call last):
+  File "C:\Users\IT MINISTRY\PycharmProjects\FWB\.venv\Lib\site-packages\django\core\handlers\exception.py", line 55, in inner
+    response = get_response(request)
+  File "C:\Users\IT MINISTRY\PycharmProjects\FWB\.venv\Lib\site-packages\django\core\handlers\base.py", line 197, in _get_response
+    response = wrapped_callback(request, *callback_args, **callback_kwargs)
+  File "C:\Users\IT MINISTRY\PycharmProjects\FWB\.venv\Lib\site-packages\django\contrib\auth\decorators.py", line 60, in _view_wrapper
+    return view_func(request, *args, **kwargs)
+  File "C:\Users\IT MINISTRY\PycharmProjects\FWB\.venv\Lib\site-packages\django\contrib\auth\decorators.py", line 60, in _view_wrapper
+    return view_func(request, *args, **kwargs)
+  File "C:\Users\IT MINISTRY\PycharmProjects\FWB\fwb\contributions\views.py", line 485, in manager_dashboard
+    send_mail(
+    ~~~~~~~~~^
+        subject,
+        ^^^^^^^^
+    ...<3 lines>...
+        fail_silently=False,
+        ^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "C:\Users\IT MINISTRY\PycharmProjects\FWB\.venv\Lib\site-packages\django\core\mail\__init__.py", line 88, in send_mail
+    return mail.send()
+           ~~~~~~~~~^^
+  File "C:\Users\IT MINISTRY\PycharmProjects\FWB\.venv\Lib\site-packages\django\core\mail\message.py", line 301, in send
+    return self.get_connection(fail_silently).send_messages([self])
+           ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^
+  File "C:\Users\IT MINISTRY\PycharmProjects\FWB\.venv\Lib\site-packages\django\core\mail\backends\smtp.py", line 128, in send_messages
+    new_conn_created = self.open()
+  File "C:\Users\IT MINISTRY\PycharmProjects\FWB\.venv\Lib\site-packages\django\core\mail\backends\smtp.py", line 93, in open
+    self.connection.starttls(context=self.ssl_context)
+    ~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Python313\Lib\smtplib.py", line 769, in starttls
+    self.ehlo_or_helo_if_needed()
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~^^
+  File "C:\Python313\Lib\smtplib.py", line 611, in ehlo_or_helo_if_needed
+    if not (200 <= self.ehlo()[0] <= 299):
+                   ~~~~~~~~~^^
+  File "C:\Python313\Lib\smtplib.py", line 451, in ehlo
+    self.putcmd(self.ehlo_msg, name or self.local_hostname)
+    ~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Python313\Lib\smtplib.py", line 378, in putcmd
+    self.send(f'{s}{CRLF}')
+    ~~~~~~~~~^^^^^^^^^^^^^^
+  File "C:\Python313\Lib\smtplib.py", line 365, in send
+    raise SMTPServerDisconnected('please run connect() first')
+smtplib.SMTPServerDisconnected: please run connect() first
+Not Found: /accounts/login/
+Not Found: /favicon.ico
+Internal Server Error: /mgt-dashboard/
+Traceback (most recent call last):
+  File "C:\Users\IT MINISTRY\PycharmProjects\FWB\.venv\Lib\site-packages\django\core\handlers\exception.py", line 55, in inner
+    response = get_response(request)
+  File "C:\Users\IT MINISTRY\PycharmProjects\FWB\.venv\Lib\site-packages\django\core\handlers\base.py", line 197, in _get_response
+    response = wrapped_callback(request, *callback_args, **callback_kwargs)
+  File "C:\Users\IT MINISTRY\PycharmProjects\FWB\.venv\Lib\site-packages\django\contrib\auth\decorators.py", line 60, in _view_wrapper
+    return view_func(request, *args, **kwargs)
+  File "C:\Users\IT MINISTRY\PycharmProjects\FWB\.venv\Lib\site-packages\django\contrib\auth\decorators.py", line 60, in _view_wrapper
+    return view_func(request, *args, **kwargs)
+  File "C:\Users\IT MINISTRY\PycharmProjects\FWB\fwb\contributions\views.py", line 485, in manager_dashboard
+    send_mail(
+    ~~~~~~~~~^
+        subject,
+        ^^^^^^^^
+    ...<3 lines>...
+        fail_silently=False,
+        ^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "C:\Users\IT MINISTRY\PycharmProjects\FWB\.venv\Lib\site-packages\django\core\mail\__init__.py", line 88, in send_mail
+    return mail.send()
+           ~~~~~~~~~^^
+  File "C:\Users\IT MINISTRY\PycharmProjects\FWB\.venv\Lib\site-packages\django\core\mail\message.py", line 301, in send
+    return self.get_connection(fail_silently).send_messages([self])
+           ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^
+  File "C:\Users\IT MINISTRY\PycharmProjects\FWB\.venv\Lib\site-packages\django\core\mail\backends\smtp.py", line 128, in send_messages
+    new_conn_created = self.open()
+  File "C:\Users\IT MINISTRY\PycharmProjects\FWB\.venv\Lib\site-packages\django\core\mail\backends\smtp.py", line 93, in open
+    self.connection.starttls(context=self.ssl_context)
+    ~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Python313\Lib\smtplib.py", line 769, in starttls
+    self.ehlo_or_helo_if_needed()
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~^^
+  File "C:\Python313\Lib\smtplib.py", line 611, in ehlo_or_helo_if_needed
+    if not (200 <= self.ehlo()[0] <= 299):
+                   ~~~~~~~~~^^
+  File "C:\Python313\Lib\smtplib.py", line 451, in ehlo
+    self.putcmd(self.ehlo_msg, name or self.local_hostname)
+    ~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Python313\Lib\smtplib.py", line 378, in putcmd
+    self.send(f'{s}{CRLF}')
+    ~~~~~~~~~^^^^^^^^^^^^^^
+  File "C:\Python313\Lib\smtplib.py", line 365, in send
+    raise SMTPServerDisconnected('please run connect() first')
+smtplib.SMTPServerDisconnected: please run connect() first
+Internal Server Error: /mgt-dashboard/
+Traceback (most recent call last):
+  File "C:\Users\IT MINISTRY\PycharmProjects\FWB\.venv\Lib\site-packages\django\core\handlers\exception.py", line 55, in inner
+    response = get_response(request)
+  File "C:\Users\IT MINISTRY\PycharmProjects\FWB\.venv\Lib\site-packages\django\core\handlers\base.py", line 197, in _get_response
+    response = wrapped_callback(request, *callback_args, **callback_kwargs)
+  File "C:\Users\IT MINISTRY\PycharmProjects\FWB\.venv\Lib\site-packages\django\contrib\auth\decorators.py", line 60, in _view_wrapper
+    return view_func(request, *args, **kwargs)
+  File "C:\Users\IT MINISTRY\PycharmProjects\FWB\.venv\Lib\site-packages\django\contrib\auth\decorators.py", line 60, in _view_wrapper
+    return view_func(request, *args, **kwargs)
+  File "C:\Users\IT MINISTRY\PycharmProjects\FWB\fwb\contributions\views.py", line 481, in manager_dashboard
+    connection = get_connection()
+                 ^^^^^^^^^^^^^^
+NameError: name 'get_connection' is not defined
+Internal Server Error: /mgt-dashboard/
+Traceback (most recent call last):
+  File "C:\Users\IT MINISTRY\PycharmProjects\FWB\.venv\Lib\site-packages\django\core\handlers\exception.py", line 55, in inner
+    response = get_response(request)
+  File "C:\Users\IT MINISTRY\PycharmProjects\FWB\.venv\Lib\site-packages\django\core\handlers\base.py", line 197, in _get_response
+    response = wrapped_callback(request, *callback_args, **callback_kwargs)
+  File "C:\Users\IT MINISTRY\PycharmProjects\FWB\.venv\Lib\site-packages\django\contrib\auth\decorators.py", line 60, in _view_wrapper
+    return view_func(request, *args, **kwargs)
+  File "C:\Users\IT MINISTRY\PycharmProjects\FWB\.venv\Lib\site-packages\django\contrib\auth\decorators.py", line 60, in _view_wrapper
+    return view_func(request, *args, **kwargs)
+  File "C:\Users\IT MINISTRY\PycharmProjects\FWB\fwb\contributions\views.py", line 482, in manager_dashboard
+    connection.open()
+    ~~~~~~~~~~~~~~~^^
+  File "C:\Users\IT MINISTRY\PycharmProjects\FWB\.venv\Lib\site-packages\django\core\mail\backends\smtp.py", line 93, in open
+    self.connection.starttls(context=self.ssl_context)
+    ~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Python313\Lib\smtplib.py", line 769, in starttls
+    self.ehlo_or_helo_if_needed()
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~^^
+  File "C:\Python313\Lib\smtplib.py", line 611, in ehlo_or_helo_if_needed
+    if not (200 <= self.ehlo()[0] <= 299):
+                   ~~~~~~~~~^^
+  File "C:\Python313\Lib\smtplib.py", line 451, in ehlo
+    self.putcmd(self.ehlo_msg, name or self.local_hostname)
+    ~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Python313\Lib\smtplib.py", line 378, in putcmd
+    self.send(f'{s}{CRLF}')
+    ~~~~~~~~~^^^^^^^^^^^^^^
+  File "C:\Python313\Lib\smtplib.py", line 365, in send
+    raise SMTPServerDisconnected('please run connect() first')
+smtplib.SMTPServerDisconnected: please run connect() first
+Internal Server Error: /mgt-dashboard/
+Traceback (most recent call last):
+  File "C:\Users\IT MINISTRY\PycharmProjects\FWB\.venv\Lib\site-packages\django\core\handlers\exception.py", line 55, in inner
+    response = get_response(request)
+  File "C:\Users\IT MINISTRY\PycharmProjects\FWB\.venv\Lib\site-packages\django\core\handlers\base.py", line 197, in _get_response
+    response = wrapped_callback(request, *callback_args, **callback_kwargs)
+  File "C:\Users\IT MINISTRY\PycharmProjects\FWB\.venv\Lib\site-packages\django\contrib\auth\decorators.py", line 60, in _view_wrapper
+    return view_func(request, *args, **kwargs)
+  File "C:\Users\IT MINISTRY\PycharmProjects\FWB\.venv\Lib\site-packages\django\contrib\auth\decorators.py", line 60, in _view_wrapper
+    return view_func(request, *args, **kwargs)
+  File "C:\Users\IT MINISTRY\PycharmProjects\FWB\fwb\contributions\views.py", line 482, in manager_dashboard
+    connection.open()
+    ~~~~~~~~~~~~~~~^^
+  File "C:\Users\IT MINISTRY\PycharmProjects\FWB\.venv\Lib\site-packages\django\core\mail\backends\smtp.py", line 93, in open
+    self.connection.starttls(context=self.ssl_context)
+    ~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Python313\Lib\smtplib.py", line 769, in starttls
+    self.ehlo_or_helo_if_needed()
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~^^
+  File "C:\Python313\Lib\smtplib.py", line 611, in ehlo_or_helo_if_needed
+    if not (200 <= self.ehlo()[0] <= 299):
+                   ~~~~~~~~~^^
+  File "C:\Python313\Lib\smtplib.py", line 451, in ehlo
+    self.putcmd(self.ehlo_msg, name or self.local_hostname)
+    ~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Python313\Lib\smtplib.py", line 378, in putcmd
+    self.send(f'{s}{CRLF}')
+    ~~~~~~~~~^^^^^^^^^^^^^^
+  File "C:\Python313\Lib\smtplib.py", line 365, in send
+    raise SMTPServerDisconnected('please run connect() first')
+smtplib.SMTPServerDisconnected: please run connect() first
+Not Found: /favicon.ico
+Internal Server Error: /mgt-dashboard/
+Traceback (most recent call last):
+  File "C:\Users\IT MINISTRY\PycharmProjects\FWB\.venv\Lib\site-packages\django\core\handlers\exception.py", line 55, in inner
+    response = get_response(request)
+  File "C:\Users\IT MINISTRY\PycharmProjects\FWB\.venv\Lib\site-packages\django\core\handlers\base.py", line 197, in _get_response
+    response = wrapped_callback(request, *callback_args, **callback_kwargs)
+  File "C:\Users\IT MINISTRY\PycharmProjects\FWB\.venv\Lib\site-packages\django\contrib\auth\decorators.py", line 60, in _view_wrapper
+    return view_func(request, *args, **kwargs)
+  File "C:\Users\IT MINISTRY\PycharmProjects\FWB\.venv\Lib\site-packages\django\contrib\auth\decorators.py", line 60, in _view_wrapper
+    return view_func(request, *args, **kwargs)
+  File "C:\Users\IT MINISTRY\PycharmProjects\FWB\fwb\contributions\views.py", line 482, in manager_dashboard
+    connection.open()
+    ~~~~~~~~~~~~~~~^^
+  File "C:\Users\IT MINISTRY\PycharmProjects\FWB\.venv\Lib\site-packages\django\core\mail\backends\smtp.py", line 93, in open
+    self.connection.starttls(context=self.ssl_context)
+    ~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Python313\Lib\smtplib.py", line 769, in starttls
+    self.ehlo_or_helo_if_needed()
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~^^
+  File "C:\Python313\Lib\smtplib.py", line 611, in ehlo_or_helo_if_needed
+    if not (200 <= self.ehlo()[0] <= 299):
+                   ~~~~~~~~~^^
+  File "C:\Python313\Lib\smtplib.py", line 451, in ehlo
+    self.putcmd(self.ehlo_msg, name or self.local_hostname)
+    ~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Python313\Lib\smtplib.py", line 378, in putcmd
+    self.send(f'{s}{CRLF}')
+    ~~~~~~~~~^^^^^^^^^^^^^^
+  File "C:\Python313\Lib\smtplib.py", line 365, in send
+    raise SMTPServerDisconnected('please run connect() first')
+smtplib.SMTPServerDisconnected: please run connect() first
+Not Found: /accounts/login/
+Not Found: /accounts/login/

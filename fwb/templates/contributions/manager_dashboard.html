@@ -1,99 +1,196 @@
 {% extends "base.html" %}
+{% load static %}
+
 {% block content %}
-<div class="container mt-4">
-    <h2>Manager Dashboard</h2>
+<div class="container-fluid">
+    <h1 class="mt-4">Manager Dashboard</h1>
 
-    <a href="{% url 'extra_contributions' %}" class="btn btn-info w-100">Extra Contributions</a>
+    <!-- Summary Statistics -->
+    <div class="row mb-4">
+        <div class="col-md-12">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title">Summary Statistics for {{ year }}</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-3">
+                            <div class="card bg-light">
+                                <div class="card-body">
+                                    <h6 class="card-title">Total Contributed</h6>
+                                    <p class="card-text h4">{{ total_contributed|floatformat:2 }}</p>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="card bg-light">
+                                <div class="card-body">
+                                    <h6 class="card-title">Expected Up to Now</h6>
+                                    <p class="card-text h4">{{ total_expected_up_to_now|floatformat:2 }}</p>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="card bg-light">
+                                <div class="card-body">
+                                    <h6 class="card-title">Due Up to Now</h6>
+                                    <p class="card-text h4 {% if total_due_up_to_now > 0 %}text-danger{% else %}text-success{% endif %}">
+                                        {{ total_due_up_to_now|floatformat:2 }}
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="card bg-light">
+                                <div class="card-body">
+                                    <h6 class="card-title">Due Full Year</h6>
+                                    <p class="card-text h4 {% if total_due_full_year > 0 %}text-danger{% else %}text-success{% endif %}">
+                                        {{ total_due_full_year|floatformat:2 }}
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
 
-    <!-- Summary Section -->
-    <div class="card mb-3">
-        <div class="card-body">
-            <h5>Summary</h5>
-            <p><strong>Total Contributions:</strong> GHC {{ total_contributed }}.00</p>
-<!--            <p><strong>Total Expected (Up to Now):</strong> {{ total_expected_up_to_now }}</p>-->
-            <p>Arrears Due (Up to Now): <strong> GHC {{ total_due_up_to_now }}</strong> out of GHC {{ total_expected_up_to_now }}</p>
-<!--            <p><strong>Total Expected (Full Year):</strong> {{ total_expected_full_year }}</p>-->
-            <p>Amount Due (Full Year): <strong> GHC {{ total_due_full_year }}</strong> out of GHC {{ total_expected_full_year }}</p>
+    <!-- Year Selection and Search Form -->
+    <div class="row mb-4">
+        <div class="col-md-6">
+            <form method="get" class="form-inline">
+                <div class="form-group mr-3">
+                    <label for="year" class="mr-2">Year:</label>
+                    <select name="year" id="year" class="form-control" onchange="this.form.submit()">
+                        {% for y in years %}
+                            <option value="{{ y }}" {% if y == year %}selected{% endif %}>{{ y }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <div class="form-group mr-3">
+                    <label for="status_filter" class="mr-2">Status:</label>
+                    <select name="status_filter" id="status_filter" class="form-control" onchange="this.form.submit()">
+                        {% for value, label in status_options %}
+                            <option value="{{ value }}" {% if value == status_filter %}selected{% endif %}>{{ label }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+            </form>
+        </div>
+
+        <div class="col-md-6">
+            <form method="get" class="form-inline float-right">
+                <div class="form-group">
+                    <input type="text" name="search" class="form-control" placeholder="Search members..." value="{{ search_query }}">
+                    <button type="submit" class="btn btn-primary ml-2">Search</button>
+                    {% if search_query or status_filter %}
+                        <a href="?year={{ year }}" class="btn btn-secondary ml-2">Clear</a>
+                    {% endif %}
+                </div>
+            </form>
         </div>
     </div>
 
 
-    <!-- Year Selection -->
-    <form method="GET" class="mb-3">
-        <label for="year">Select Year:</label>
-        <select name="year" id="year" class="form-control d-inline-block w-auto">
-            {% for y in years %}
-                <option value="{{ y }}" {% if y == year %}selected{% endif %}>{{ y }}</option>
-            {% endfor %}
-        </select>
-
-        <!-- Search Bar -->
-        <input type="text" name="search" value="{{ search_query }}" placeholder="Search by name" class="form-control d-inline-block w-auto">
-
-        <!-- Filter Dropdown -->
-        <select name="filter" class="form-control d-inline-block w-auto">
-            <option value="all" {% if filter_status == "all" %}selected{% endif %}>All</option>
-            <option value="Up to Date" {% if filter_status == "Up to Date" %}selected{% endif %}>Up to Date</option>
-            <option value="Defaulting (≤2 months)" {% if filter_status == "Defaulting (≤2 months)" %}selected{% endif %}>Defaulting (≤2 months)</option>
-            <option value="Defaulting (≤4 months)" {% if filter_status == "Defaulting (≤4 months)" %}selected{% endif %}>Defaulting (≤4 months)</option>
-            <option value="Defaulting (>4 months)" {% if filter_status == "Defaulting (>4 months)" %}selected{% endif %}>Defaulting (>4 months)</option>
-            <option value="paid_in_advance" {% if request.GET.filter == "paid_in_advance" %}selected{% endif %}>Paid in Advance</option>
-        </select>
-
-        <button type="submit" class="btn btn-primary">Filter</button>
-    </form>
-
-    <form method="POST" action="{% url 'send_reminder_message' %}">
-        {% csrf_token %}
-
-        <!-- Contribution Table -->
-        <div class="card">
-            <div class="card-body">
-                <table class="table table-bordered text-center">
-                    <thead>
-                        <tr>
-                            <th><input type="checkbox" id="select_all"></th>
-                            <th>Name</th>
-                            {% for month in month_names %}
-                                <th>{{ month }}</th>
-                            {% endfor %}
-                            <th>Total Paid</th>
-                            <th>Due (Up to Date)</th>
-                            <th>Status</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {% for user in user_data %}
-                        <tr>
-                            <td><input type="checkbox" name="user_ids[]" value="{{ user.id }}"></td>
-                            <td>{{ user.name }}</td>
-                            {% for amount in user.monthly_contributions %}
-                                <td>{{ amount }}</td>
-                            {% endfor %}
-                            <td><strong>{{ user.total_paid }}</strong></td>
-                            <td>{{ user.due_up_to_date }}</td>
-                            <td class="{% if user.status == 'Up to Date' %}text-success{% else %}text-warning{% endif %}">
-                                <strong>{{ user.status }}</strong>
-                            </td>
-                        </tr>
-                        {% empty %}
-                        <tr>
-                            <td colspan="16" class="text-center">No contributions found</td>
-                        </tr>
-                        {% endfor %}
-                    </tbody>
-                </table>
+    <!-- Members Contribution Table -->
+    <div class="row">
+        <div class="col-md-12">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title">Member Contributions</h5>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-bordered table-hover">
+                            <thead class="thead-light">
+                                <tr>
+                                    <th>Member</th>
+                                    {% for month in month_names %}
+                                        <th>{{ month }}</th>
+                                    {% endfor %}
+                                    <th>Total Paid</th>
+                                    <th>Due Up to Now</th>
+                                    <th>Status</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for row in user_data %}
+                                    <tr>
+                                        <td>
+                                            <strong>{{ row.name }}</strong>
+                                            <br>
+                                            <small class="text-muted">{{ row.user.email }}</small>
+                                        </td>
+                                        {% for amount in row.monthly_contributions %}
+                                            <td class="{% if amount > 0 %}table-success{% endif %}">
+                                                {% if amount > 0 %}{{ amount|floatformat:2 }}{% endif %}
+                                            </td>
+                                        {% endfor %}
+                                        <td class="font-weight-bold">{{ row.total_paid|floatformat:2 }}</td>
+                                        <td class="font-weight-bold {% if row.due_up_to_date > 0 %}text-danger{% else %}text-success{% endif %}">
+                                            {{ row.due_up_to_date|floatformat:2 }}
+                                        </td>
+                                        <td>
+                                            {% if row.status == 'up_to_date' %}
+                                                <span class="badge badge-success text-black">Up to Date</span>
+                                            {% elif row.status == 'ahead' %}
+                                                <span class="badge badge-info text-black">Paid Ahead</span>
+                                            {% elif row.status == 'default_2' %}
+                                                <span class="badge badge-warning text-black">Defaulting (≤2 months)</span>
+                                            {% elif row.status == 'default_4' %}
+                                                <span class="badge badge-warning text-black">Defaulting (3-4 months)</span>
+                                            {% else %}
+                                                <span class="badge badge-danger text-black">Defaulting (>4 months)</span>
+                                            {% endif %}
+                                        </td>
+                                    </tr>
+                                {% empty %}
+                                    <tr>
+                                        <td colspan="16" class="text-center">No members found</td>
+                                    </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
             </div>
         </div>
+    </div>
 
-        <button type="submit" class="btn btn-danger mt-3">Send Reminder Messages</button>
-    </form>
+    <!-- Message Sending Form -->
+    <div class="row mb-4">
+        <div class="col-md-12">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title">Send Reminder Messages</h5>
+                </div>
+                <div class="card-body">
+                    <form method="post">
+                        {% csrf_token %}
+                        <div class="form-group">
+                            <label for="recipient_type">Send to:</label>
+                            <select name="recipient_type" id="recipient_type" class="form-control">
+                                <option value="default_2">Members defaulting by 2 months or less</option>
+                                <option value="default_4">Members defaulting by 3-4 months</option>
+                                <option value="default_over_4">Members defaulting 5 months or more</option>
+                                <option value="up_to_date">Members up to date</option>
+                                <option value="ahead">Members paid in advance</option>
+                            </select>
+                        </div>
+                        <button type="submit" name="send_messages" class="btn btn-primary">
+                            Send Automated Messages
+                        </button>
+                        <small class="form-text text-muted">
+                            This will send an email reminder to all members in the selected category.
+                        </small>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+
 </div>
-
-<script>
-    document.getElementById('select_all').addEventListener('change', function () {
-        let checkboxes = document.querySelectorAll('input[name="user_ids[]"]');
-        checkboxes.forEach(checkbox => checkbox.checked = this.checked);
-    });
-</script>
 {% endblock %}

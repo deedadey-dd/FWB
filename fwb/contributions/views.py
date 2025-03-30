@@ -1,7 +1,7 @@
 from django.shortcuts import render, redirect
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required, user_passes_test
-from django.core.mail import send_mail
+from django.core.mail import send_mail, get_connection
 from django.utils.timezone import now
 from .models import Contribution, ContributionSetting, ContributionRecord, ExtraContribution
 from .forms import ContributionForm
@@ -12,6 +12,7 @@ from datetime import datetime
 from users.models import CustomUser
 from collections import defaultdict
 from decimal import Decimal
+from django.conf import settings
 
 
 def is_manager(user):
@@ -55,11 +56,12 @@ def record_contribution(request):
 
                 # Send notification email
                 send_mail(
-                    "Contribution Recorded",
-                    f"Dear {contribution.user.first_name},\n\nAn amount of {contribution.amount} has been recorded for you as {contribution.contribution_type} contribution.\n\nThank you!",
-                    "deedadey@vivaldi.net",
-                    [contribution.user.email],
-                    fail_silently=True,
+                    subject="FWB Contribution",
+                    message=f"Dear {contribution.user.first_name},\n\nAn amount of {contribution.amount} has been "
+                            f"recorded for you as {contribution.contribution_type} contribution.\n\nThank you!",
+                    from_email=settings.DEFAULT_FROM_EMAIL,
+                    recipient_list=[contribution.user.email],
+                    fail_silently=False,
                 )
 
                 messages.success(request, "Contribution recorded successfully.")
@@ -246,7 +248,7 @@ def dashboard(request):
 #         "total_due_full_year": total_due_full_year,
 #     })
 #
-#
+
 @login_required
 @user_passes_test(is_manager)
 def view_contributions(request):
@@ -358,89 +360,208 @@ def view_contributions(request):
 #     })
 
 
+# @login_required
+# @user_passes_test(lambda u: u.is_staff)  # Only managers can access
+# def manager_dashboard(request):
+#     selected_year = request.GET.get("year")
+#     current_year = datetime.now().year
+#     year = int(selected_year) if selected_year else current_year
+#     years = list(range(2020, current_year + 1))
+#     current_month = datetime.now().month
+#
+#     # Get contribution settings (monthly amount)
+#     try:
+#         contribution_setting = ContributionSetting.objects.get(year=year)
+#         monthly_amount = contribution_setting.amount
+#     except ContributionSetting.DoesNotExist:
+#         monthly_amount = 0
+#
+#     search_query = request.GET.get("search", "").strip()
+#     filter_option = request.GET.get("filter", "").strip()  # Get filter option
+#
+#     users = CustomUser.objects.filter(is_staff=False)
+#
+#     # Apply search filter (Partial name search)
+#     if search_query:
+#         users = users.filter(
+#             Q(first_name__icontains=search_query) |
+#             Q(other_names__icontains=search_query) |
+#             Q(last_name__icontains=search_query)
+#         )
+#
+#     month_names = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"]
+#     user_data = []
+#     total_contributed = 0
+#
+#     for user in users:
+#         # Get total contributions per month
+#         contributions = (
+#             Contribution.objects.filter(user=user, date_contributed__year=year)
+#             .values("date_contributed__month")
+#             .annotate(total_paid=Sum("amount"))
+#         )
+#
+#         contributions_dict = {entry["date_contributed__month"]: entry["total_paid"] for entry in contributions}
+#
+#         # Calculate totals
+#         total_paid = sum(contributions_dict.values())
+#         due_up_to_date = (current_month * monthly_amount) - total_paid
+#         due_full_year = (12 * monthly_amount) - total_paid
+#         months_defaulted = max(0, due_up_to_date // monthly_amount)  # Convert to int in case it's Decimal
+#
+#         # Store data for filtering
+#         user_entry = {
+#             "id": user.id,
+#             "name": f"{user.first_name} {user.last_name}",
+#             "monthly_contributions": [contributions_dict.get(month, 0) for month in range(1, 13)],
+#             "total_paid": total_paid,
+#             "due_up_to_date": due_up_to_date,
+#             "due_full_year": max(0, due_full_year),
+#             "months_defaulted": int(months_defaulted),  # Ensure it’s an integer
+#         }
+#
+#         user_data.append(user_entry)
+#         total_contributed += total_paid
+#
+#     # **Filtering Logic**
+#     print("Selected Filter:", filter_option)  # Debugging
+#
+#     if filter_option == "up_to_date":
+#         user_data = [user for user in user_data if user["months_defaulted"] == 0]
+#     elif filter_option == "defaulting_2":
+#         user_data = [user for user in user_data if 1 <= user["months_defaulted"] <= 2]
+#     elif filter_option == "defaulting_4":
+#         user_data = [user for user in user_data if 3 <= user["months_defaulted"] <= 4]
+#     elif filter_option == "defaulting_more":
+#         user_data = [user for user in user_data if user["months_defaulted"] > 4]
+#     elif filter_option == "paid_in_advance":
+#         user_data = [user for user in user_data if user["due_up_to_date"] < Decimal(0)]  # Ensure Decimal comparison
+#
+#     print("Filtered User Data:", user_data)  # Debugging output to verify filtering
+#
+#     # Sorting users alphabetically
+#     user_data = sorted(user_data, key=lambda x: x["name"].split()[0])
+#
+#     # Summary statistics
+#     total_expected_up_to_now = current_month * monthly_amount * users.count()
+#     total_expected_full_year = 12 * monthly_amount * users.count()
+#     total_due_up_to_now = total_expected_up_to_now - total_contributed
+#     total_due_full_year = total_expected_full_year - total_contributed
+#
+#     return render(request, "contributions/manager_dashboard.html", {
+#         "user_data": user_data,
+#         "month_names": month_names,
+#         "year": year,
+#         "years": years,
+#         "total_contributed": total_contributed,
+#         "total_expected_up_to_now": total_expected_up_to_now,
+#         "total_expected_full_year": total_expected_full_year,
+#         "total_due_up_to_now": total_due_up_to_now,
+#         "total_due_full_year": total_due_full_year,
+#         "search_query": search_query,
+#         "filter_option": filter_option,
+#     })
+
+
+#############
 @login_required
 @user_passes_test(lambda u: u.is_staff)  # Only managers can access
 def manager_dashboard(request):
+    # Get year from GET request or default to the current year
     selected_year = request.GET.get("year")
     current_year = datetime.now().year
     year = int(selected_year) if selected_year else current_year
     years = list(range(2020, current_year + 1))
     current_month = datetime.now().month
 
-    # Get contribution settings (monthly amount)
+    # Handle message sending if POST request
+    if request.method == 'POST' and 'send_messages' in request.POST:
+        recipient_type = request.POST.get('recipient_type')
+        users_to_message = get_users_by_status(recipient_type, year, current_month)
+
+        for user in users_to_message:
+            status_message = get_status_message(user, year, current_month)
+            subject = "FWB Status Reminder"
+            message = f"Dear {user.first_name},\n\nThis is an automated message on your status.\n{status_message}\n\nThank you."
+            connect()
+            send_mail(
+                subject,
+                message,
+                settings.DEFAULT_FROM_EMAIL,
+                [user.email],
+                fail_silently=False,
+            )
+
+        messages.success(request, f"Messages sent to {len(users_to_message)} members")
+        return redirect('manager_dashboard')
+
+    # Fetch contribution setting (amount per month)
     try:
         contribution_setting = ContributionSetting.objects.get(year=year)
         monthly_amount = contribution_setting.amount
     except ContributionSetting.DoesNotExist:
-        monthly_amount = 0
+        monthly_amount = 0  # Default if not set
 
-    search_query = request.GET.get("search", "").strip()
-    filter_option = request.GET.get("filter", "").strip()  # Get filter option
+    # Get search query
+    search_query = request.GET.get('search', '')
 
-    users = CustomUser.objects.filter(is_staff=False)
+    # Get status filter
+    status_filter = request.GET.get('status_filter', '')
 
-    # Apply search filter (Partial name search)
+    # Base queryset
+    users = CustomUser.objects.filter(is_staff=False).order_by('first_name')
+
+    # Apply search filter
     if search_query:
         users = users.filter(
             Q(first_name__icontains=search_query) |
-            Q(other_names__icontains=search_query) |
-            Q(last_name__icontains=search_query)
+            Q(last_name__icontains=search_query) |
+            Q(other_names__icontains=search_query)
         )
 
+    # List of month names
     month_names = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"]
+
     user_data = []
-    total_contributed = 0
+    total_contributed = 0  # Track total contributions for the year
 
     for user in users:
-        # Get total contributions per month
+        # Get the total contributions grouped by month
         contributions = (
             Contribution.objects.filter(user=user, date_contributed__year=year)
             .values("date_contributed__month")
             .annotate(total_paid=Sum("amount"))
         )
 
+        # Create a dictionary for contributions per month
         contributions_dict = {entry["date_contributed__month"]: entry["total_paid"] for entry in contributions}
 
         # Calculate totals
         total_paid = sum(contributions_dict.values())
-        due_up_to_date = (current_month * monthly_amount) - total_paid
-        due_full_year = (12 * monthly_amount) - total_paid
-        months_defaulted = max(0, due_up_to_date // monthly_amount)  # Convert to int in case it's Decimal
+        due_up_to_date = (current_month * monthly_amount) - total_paid  # Can be negative
+        due_full_year = (12 * monthly_amount) - total_paid  # Always non-negative
 
-        # Store data for filtering
-        user_entry = {
-            "id": user.id,
+        # Calculate months defaulting (positive means behind, negative means ahead)
+        months_defaulting = current_month - (total_paid / monthly_amount) if monthly_amount else 0
+
+        # Prepare row data
+        row = {
+            "user": user,
             "name": f"{user.first_name} {user.last_name}",
-            "monthly_contributions": [contributions_dict.get(month, 0) for month in range(1, 13)],
+            "monthly_contributions": [contributions_dict.get(month_index, 0) for month_index in range(1, 13)],
             "total_paid": total_paid,
             "due_up_to_date": due_up_to_date,
             "due_full_year": max(0, due_full_year),
-            "months_defaulted": int(months_defaulted),  # Ensure it’s an integer
+            "months_defaulting": months_defaulting,
+            "status": get_contribution_status(months_defaulting),
         }
 
-        user_data.append(user_entry)
-        total_contributed += total_paid
+        # Apply status filter if specified
+        if not status_filter or row['status'] == status_filter:
+            user_data.append(row)
+            total_contributed += total_paid  # Accumulate total contributions
 
-    # **Filtering Logic**
-    print("Selected Filter:", filter_option)  # Debugging
-
-    if filter_option == "up_to_date":
-        user_data = [user for user in user_data if user["months_defaulted"] == 0]
-    elif filter_option == "defaulting_2":
-        user_data = [user for user in user_data if 1 <= user["months_defaulted"] <= 2]
-    elif filter_option == "defaulting_4":
-        user_data = [user for user in user_data if 3 <= user["months_defaulted"] <= 4]
-    elif filter_option == "defaulting_more":
-        user_data = [user for user in user_data if user["months_defaulted"] > 4]
-    elif filter_option == "paid_in_advance":
-        user_data = [user for user in user_data if user["due_up_to_date"] < Decimal(0)]  # Ensure Decimal comparison
-
-    print("Filtered User Data:", user_data)  # Debugging output to verify filtering
-
-    # Sorting users alphabetically
-    user_data = sorted(user_data, key=lambda x: x["name"].split()[0])
-
-    # Summary statistics
+    # Calculate summary statistics
     total_expected_up_to_now = current_month * monthly_amount * users.count()
     total_expected_full_year = 12 * monthly_amount * users.count()
     total_due_up_to_now = total_expected_up_to_now - total_contributed
@@ -457,9 +578,76 @@ def manager_dashboard(request):
         "total_due_up_to_now": total_due_up_to_now,
         "total_due_full_year": total_due_full_year,
         "search_query": search_query,
-        "filter_option": filter_option,
+        "status_filter": status_filter,
+        "status_options": [
+            ('', 'All Members'),
+            ('up_to_date', 'Up to Date'),
+            ('default_2', 'Defaulting by 2 months or less'),
+            ('default_4', 'Defaulting by 2-4 months'),
+            ('default_over_4', 'Defaulting by more than 4 months'),
+            ('ahead', 'Paid in Advance'),
+        ],
     })
 
+
+def get_contribution_status(months_defaulting):
+    """Determine the contribution status based on months defaulting"""
+    if months_defaulting < 0:
+        return 'ahead'
+    elif months_defaulting == 0:
+        return 'up_to_date'
+    elif 0 < months_defaulting <= 2:
+        return 'default_2'
+    elif 2 <= months_defaulting < 4:
+        return 'default_4'
+    else:
+        return 'default_over_4'
+
+
+def get_users_by_status(status, year, current_month):
+    """Get users filtered by their contribution status"""
+    users = CustomUser.objects.filter(is_staff=False)
+    result = []
+
+    for user in users:
+        try:
+            monthly_amount = ContributionSetting.objects.get(year=year).amount
+        except ContributionSetting.DoesNotExist:
+            monthly_amount = 0
+
+        total_paid = Contribution.objects.filter(
+            user=user, date_contributed__year=year
+        ).aggregate(total_paid=Sum('amount'))['total_paid'] or 0
+
+        months_defaulting = (total_paid / monthly_amount) - current_month if monthly_amount else 0
+        user_status = get_contribution_status(months_defaulting)
+
+        if user_status == status:
+            result.append(user)
+
+    return result
+
+
+def get_status_message(user, year, current_month):
+    """Generate appropriate status message for a user"""
+    try:
+        monthly_amount = ContributionSetting.objects.get(year=year).amount
+    except ContributionSetting.DoesNotExist:
+        monthly_amount = 0
+
+    total_paid = Contribution.objects.filter(
+        user=user, date_contributed__year=year
+    ).aggregate(total_paid=Sum('amount'))['total_paid'] or 0
+
+    months_defaulting = current_month - (total_paid / monthly_amount) if monthly_amount else 0
+
+    if months_defaulting < 0:
+        return f"You have paid in advance by {-months_defaulting:.1f} months. Thank you for your prompt contributions."
+    elif months_defaulting == 0:
+        return "Your contributions are up to date. Thank you for your prompt payments."
+    else:
+        return f"You are defaulting by {months_defaulting:.1f} months. Kindly make your contributions to come up to date."
+##############
 
 
 @login_required

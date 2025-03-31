@@ -374,3 +374,4 @@ smtplib.SMTPServerDisconnected: please run connect() first
 Not Found: /accounts/login/
 Not Found: /accounts/login/
 Not Found: /admin
+Not Found: /favicon.ico

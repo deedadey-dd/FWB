@@ -34,6 +34,8 @@ ALLOWED_HOSTS = ['*']
 # Application definition
 
 INSTALLED_APPS = [
+    'axes',
+    'dbbackup',
     'phonenumber_field',
     'users',
     'contributions',
@@ -54,6 +56,8 @@ MIDDLEWARE = [
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
 ]
+
+MIDDLEWARE.insert(0, 'axes.middleware.AxesMiddleware')
 
 ROOT_URLCONF = 'fwb.urls'
 
@@ -86,11 +90,14 @@ DATABASES = {
     }
 }
 
+DBBACKUP_STORAGE = 'django.core.files.storage.FileSystemStorage'
+DBBACKUP_STORAGE_OPTIONS = {'location': '/backups/'}
 
 # Password validation
 # https://docs.djangoproject.com/en/5.1/ref/settings/#auth-password-validators
 
 AUTHENTICATION_BACKENDS = [
+    'axes.backends.AxesBackend',
     'users.auth_backends.CustomAuthBackend',  # Custom authentication
     'django.contrib.auth.backends.ModelBackend',  # Default backend
 ]
@@ -113,10 +120,66 @@ AUTH_PASSWORD_VALIDATORS = [
 
 AUTH_USER_MODEL = 'users.CustomUser'
 
+# Axes settings
+AXES_FAILURE_LIMIT = 5  # Lock user out after 3 failed attempts
+AXES_COOLOFF_TIME = 1  # Lockout duration in hours
+AXES_LOCK_OUT_AT_FAILURE = True  # Enforce lockout
+AXES_RESET_ON_SUCCESS = True  # Reset failed attempts on successful login
+
 # Internationalization
 # https://docs.djangoproject.com/en/5.1/topics/i18n/
 
 LANGUAGE_CODE = 'en-us'
+
+LOGGING = {
+    'version': 1,
+    'disable_existing_loggers': False,
+    'handlers': {
+        'file': {
+            'level': 'INFO',
+            'class': 'logging.FileHandler',
+            'filename': 'auth.log',
+        },
+    },
+    'loggers': {
+        'django.security': {
+            'handlers': ['file'],
+            'level': 'INFO',
+            'propagate': True,
+        },
+        'django.request': {
+            'handlers': ['file'],
+            'level': 'WARNING',
+            'propagate': True,
+        },
+        'django.auth': {
+            'handlers': ['file'],
+            'level': 'INFO',
+            'propagate': True,
+        },
+    },
+}
+
+PASSWORD_HASHERS = [
+    'django.contrib.auth.hashers.PBKDF2PasswordHasher',
+    'django.contrib.auth.hashers.Argon2PasswordHasher',
+    'django.contrib.auth.hashers.BCryptSHA256PasswordHasher',
+    'django.contrib.auth.hashers.ScryptPasswordHasher',
+]
+
+SESSION_COOKIE_SECURE = True  # Forces HTTPS for cookies
+CSRF_COOKIE_SECURE = True  # Protects CSRF cookies
+SESSION_EXPIRE_AT_BROWSER_CLOSE = True  # Logs out on browser close
+SESSION_COOKIE_AGE = 1800  # 30 minutes timeout
+SESSION_COOKIE_HTTPONLY = True  # Prevents JavaScript access
+
+# Enforce HTTPS in production
+
+# SECURE_SSL_REDIRECT = True
+# SECURE_HSTS_SECONDS = 31536000  # 1 year
+# SECURE_HSTS_INCLUDE_SUBDOMAINS = True
+# SECURE_HSTS_PRELOAD = True
+
 
 TIME_ZONE = 'UTC'
 
@@ -144,4 +207,5 @@ EMAIL_PORT = 587
 EMAIL_USE_TLS = True
 EMAIL_HOST_USER = os.getenv('EMAIL_USER')
 EMAIL_HOST_PASSWORD = os.getenv('EMAIL_PASS')
-DEFAULT_FROM_EMAIL = f'FWB <{os.getenv('EMAIL_USER')}>'
+DEFAULT_FROM_EMAIL = os.getenv('EMAIL_USER')
+

@@ -1,9 +1,12 @@
 asgiref==3.8.1
 Django==5.1.7
+django-axes==7.0.2
+django-dbbackup==4.2.1
 django-phonenumber-field==8.0.0
 django-phonenumbers==1.0.1
 dotenv==0.9.9
 phonenumbers==9.0.1
 python-dotenv==1.0.1
+pytz==2025.2
 sqlparse==0.5.3
 tzdata==2025.1

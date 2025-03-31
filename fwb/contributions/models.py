@@ -1,6 +1,8 @@
+from django.core.exceptions import ValidationError
 from django.db import models
 from django.utils.timezone import now
 from django.contrib.auth import get_user_model
+from decimal import Decimal
 
 
 User = get_user_model()
@@ -39,6 +41,14 @@ class MonthlyContribution(models.Model):
     month = models.PositiveIntegerField()
     amount = models.DecimalField(max_digits=10, decimal_places=2, default=0)
 
+    def clean(self):
+        if self.amount is not None and self.amount <= Decimal("0"):  # Convert to Decimal
+            raise ValidationError({"amount": "The contribution amount must be greater than zero."})
+
+    def save(self, *args, **kwargs):
+        self.clean()  # Validate before saving
+        super().save(*args, **kwargs)
+
     class Meta:
         unique_together = ("user", "year", "month")
 
@@ -52,6 +62,14 @@ class ExtraContribution(models.Model):
     reason = models.TextField(blank=True, null=True)
     date_contributed = models.DateField(default=now)
 
+    def clean(self):
+        if self.amount is not None and self.amount <= Decimal("0"):  # Convert to Decimal
+            raise ValidationError({"amount": "The contribution amount must be greater than zero."})
+
+    def save(self, *args, **kwargs):
+        self.clean()  # Validate before saving
+        super().save(*args, **kwargs)
+
     def __str__(self):
         return f"{self.user.username} - Extra Contribution: {self.amount}"
 
@@ -63,6 +81,14 @@ class ContributionRecord(models.Model):
     recorded_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True,
                                     related_name="contribution_record")
     recorded_at = models.DateTimeField(auto_now_add=True)
+
+    def clean(self):
+        if self.amount is not None and self.amount <= Decimal("0"):  # Convert to Decimal
+            raise ValidationError({"amount": "The contribution amount must be greater than zero."})
+
+    def save(self, *args, **kwargs):
+        self.clean()  # Validate before saving
+        super().save(*args, **kwargs)
 
     def __str__(self):
         return f"{self.user} contributed {self.amount} on {self.recorded_at}"

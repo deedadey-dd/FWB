@@ -20,7 +20,7 @@ from django.contrib import admin
 from django.urls import path, include
 
 urlpatterns = [
-    path('admin/', admin.site.urls),
+    path('admin-fwb/', admin.site.urls),
     path('', include('contributions.urls')),
     path('', include('users.urls')),
 ]

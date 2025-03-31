@@ -5,6 +5,7 @@ from .views import register, update_profile, add_child, add_contact, user_login,
 urlpatterns = [
     path('', home, name='home'),
     path('login/', user_login, name='login'),
+    path('accounts/login/', user_login, name='login'),
     path('register/', register, name='register'),
     path('profile/update/', update_profile, name='update_profile'),
     path('contacts/add', add_contact, name='add_contact'),

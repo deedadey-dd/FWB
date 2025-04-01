@@ -58,19 +58,20 @@
 
     <!-- Year Selection and Search Form -->
     <div class="row mb-4">
+        <!-- Left side - Year and Status filters -->
         <div class="col-md-6">
             <form method="get" class="form-inline">
-                <div class="form-group mr-3">
-                    <label for="year" class="mr-2">Year:</label>
-                    <select name="year" id="year" class="form-control" onchange="this.form.submit()">
+                <div class="form-group mr-3 d-flex align-items-center">
+                    <label for="year" class="me-3 mb-4">Year: </label>
+                    <select name="year" id="year" class="form-control mb-4" onchange="this.form.submit()">
                         {% for y in years %}
                             <option value="{{ y }}" {% if y == year %}selected{% endif %}>{{ y }}</option>
                         {% endfor %}
                     </select>
                 </div>
 
-                <div class="form-group mr-3">
-                    <label for="status_filter" class="mr-2">Status:</label>
+                <div class="form-group mr-3 d-flex align-items-center">
+                    <label for="status_filter" class="me-1">Status:</label>
                     <select name="status_filter" id="status_filter" class="form-control" onchange="this.form.submit()">
                         {% for value, label in status_options %}
                             <option value="{{ value }}" {% if value == status_filter %}selected{% endif %}>{{ label }}</option>
@@ -80,26 +81,39 @@
             </form>
         </div>
 
+        <!-- Right side - Search and Export -->
         <div class="col-md-6">
-            <form method="get" class="form-inline float-right">
-                <div class="form-group">
-                    <input type="text" name="search" class="form-control" placeholder="Search members..." value="{{ search_query }}">
-                    <button type="submit" class="btn btn-primary ml-2">Search</button>
+            <!-- Search form -->
+            <form method="get" class="form-inline float-right mb-2">
+                <div class="form-group mr-3 d-flex align-items-center">
+                    <input type="text" name="search" class="form-control mb-3 me-1" placeholder="Search members..." value="{{ search_query }}">
+                    <button type="submit" class="btn btn-primary ml-2 mb-3">Search</button>
                     {% if search_query or status_filter %}
                         <a href="?year={{ year }}" class="btn btn-secondary ml-2">Clear</a>
                     {% endif %}
                 </div>
             </form>
+
+            <!-- Export button - now below search -->
+            <div class="float-right">
+                <a href="{% url 'export_contributions' %}?year={{ year }}&status_filter={{ status_filter }}&search={{ search_query }}"
+                   class="btn btn-success">
+                    <i class="fas fa-file-excel"></i> Export to Excel
+                </a>
+            </div>
         </div>
     </div>
-
-
     <!-- Members Contribution Table -->
     <div class="row">
         <div class="col-md-12">
             <div class="card">
-                <div class="card-header">
+                <div class="card-header d-flex justify-content-between align-items-center">
                     <h5 class="card-title">Member Contributions</h5>
+                    <div>
+                        <span class="badge badge-light">
+                            Showing {{ page_obj.start_index }}-{{ page_obj.end_index }} of {{ page_obj.paginator.count }}
+                        </span>
+                    </div>
                 </div>
                 <div class="card-body">
                     <div class="table-responsive">
@@ -116,7 +130,7 @@
                                 </tr>
                             </thead>
                             <tbody>
-                                {% for row in user_data %}
+                                {% for row in page_obj %}
                                     <tr>
                                         <td>
                                             <strong>{{ row.name }}</strong>
@@ -154,6 +168,41 @@
                             </tbody>
                         </table>
                     </div>
+
+                    <!-- Pagination -->
+                    <nav aria-label="Page navigation">
+                        <ul class="pagination justify-content-center">
+                            {% if page_obj.has_previous %}
+                                <li class="page-item">
+                                    <a class="page-link" href="?page=1&year={{ year }}&status_filter={{ status_filter }}&search={{ search_query }}">First</a>
+                                </li>
+                                <li class="page-item">
+                                    <a class="page-link" href="?page={{ page_obj.previous_page_number }}&year={{ year }}&status_filter={{ status_filter }}&search={{ search_query }}">Previous</a>
+                                </li>
+                            {% endif %}
+
+                            {% for num in page_obj.paginator.page_range %}
+                                {% if page_obj.number == num %}
+                                    <li class="page-item active">
+                                        <a class="page-link" href="#">{{ num }}</a>
+                                    </li>
+                                {% elif num > page_obj.number|add:'-3' and num < page_obj.number|add:'3' %}
+                                    <li class="page-item">
+                                        <a class="page-link" href="?page={{ num }}&year={{ year }}&status_filter={{ status_filter }}&search={{ search_query }}">{{ num }}</a>
+                                    </li>
+                                {% endif %}
+                            {% endfor %}
+
+                            {% if page_obj.has_next %}
+                                <li class="page-item">
+                                    <a class="page-link" href="?page={{ page_obj.next_page_number }}&year={{ year }}&status_filter={{ status_filter }}&search={{ search_query }}">Next</a>
+                                </li>
+                                <li class="page-item">
+                                    <a class="page-link" href="?page={{ page_obj.paginator.num_pages }}&year={{ year }}&status_filter={{ status_filter }}&search={{ search_query }}">Last</a>
+                                </li>
+                            {% endif %}
+                        </ul>
+                    </nav>
                 </div>
             </div>
         </div>
@@ -167,19 +216,19 @@
                     <h5 class="card-title">Send Reminder Messages</h5>
                 </div>
                 <div class="card-body">
-                    <form method="post">
+                    <form method="post" id="messageForm">
                         {% csrf_token %}
                         <div class="form-group">
                             <label for="recipient_type">Send to:</label>
                             <select name="recipient_type" id="recipient_type" class="form-control">
-                                <option value="default_2">Members defaulting by 2 months or less</option>
-                                <option value="default_4">Members defaulting by 3-4 months</option>
-                                <option value="default_over_4">Members defaulting 5 months or more</option>
-                                <option value="up_to_date">Members up to date</option>
-                                <option value="ahead">Members paid in advance</option>
+                                {% for value, label in status_options %}
+                                    {% if value %}  {# Skip the 'All Members' option #}
+                                        <option value="{{ value }}">{{ label }}</option>
+                                    {% endif %}
+                                {% endfor %}
                             </select>
                         </div>
-                        <button type="submit" name="send_messages" class="btn btn-primary">
+                        <button type="button" id="sendMessagesBtn" class="btn btn-primary">
                             Send Automated Messages
                         </button>
                         <small class="form-text text-muted">
@@ -191,6 +240,62 @@
         </div>
     </div>
 
-
+    <!-- Confirmation Modal -->
+    <div class="modal fade" id="confirmModal" tabindex="-1" role="dialog" aria-labelledby="confirmModalLabel" aria-hidden="true">
+        <div class="modal-dialog" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="confirmModalLabel">Confirm Message Sending</h5>
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                </div>
+                <div class="modal-body">
+                    <p>You are about to send messages to <span id="recipientCount">0</span> members (<span id="recipientType"></span>).</p>
+                    <p>Are you sure you want to proceed?</p>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancel</button>
+                    <button type="button" id="confirmSend" class="btn btn-primary">Send Messages</button>
+                </div>
+            </div>
+        </div>
+    </div>
 </div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+$(document).ready(function() {
+    // Confirmation dialog for sending messages
+    $('#sendMessagesBtn').click(function() {
+        const recipientType = $('#recipient_type').val();
+
+        // Get count of recipients via AJAX
+        $.ajax({
+            url: "{% url 'confirm_send_messages' %}",
+            method: "POST",
+            data: {
+                recipient_type: recipientType,
+                csrfmiddlewaretoken: "{{ csrf_token }}"
+            },
+            success: function(response) {
+                $('#recipientCount').text(response.count);
+                $('#recipientType').text(response.recipient_type);
+                $('#confirmModal').modal('show');
+            },
+            error: function() {
+                alert('Error getting recipient count');
+            }
+        });
+    });
+
+    // Handle actual sending after confirmation
+    $('#confirmSend').click(function() {
+        $('#confirmModal').modal('hide');
+        $('#messageForm').append('<input type="hidden" name="send_messages" value="1">');
+        $('#messageForm').submit();
+    });
+});
+</script>
 {% endblock %}

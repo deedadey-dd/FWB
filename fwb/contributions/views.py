@@ -1,10 +1,11 @@
-from django.shortcuts import render, redirect
+from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required, user_passes_test
 from django.core.mail import send_mail, get_connection
 from django.utils.timezone import now
-from .models import Contribution, ContributionSetting, ContributionRecord, ExtraContribution
-from .forms import ContributionForm
+from .models import Contribution, ContributionSetting, ContributionRecord, ExtraContribution, WelfareBenefit, Expense, \
+    BenefitRequest
+from .forms import ContributionForm, BenefitRequestForm
 from .utils import allocate_contribution
 from django.db.models.functions import ExtractYear, ExtractMonth
 from django.db.models import Sum, Q
@@ -26,6 +27,10 @@ STATUS_OPTIONS = [
     ('default_over_4', 'Defaulting 5 months or more'),
     ('ahead', 'Paid in Advance'),
 ]
+
+
+def is_staff(user):
+    return user.is_staff
 
 
 def is_manager(user):
@@ -137,7 +142,7 @@ def dashboard(request):
 
     # Adjust `total_due_year_end`
     months_due = max(0, months_remaining - months_covered_by_advance)
-    total_due_year_end = months_due * monthly_amount
+    total_due_year_end = (months_due * monthly_amount) + total_due
 
     # Determine health status
     if arrears_count == 0 and months_covered_by_advance == 0:
@@ -184,8 +189,6 @@ def dashboard(request):
     }
 
     return render(request, 'contributions/dashboard.html', context)
-
-
 
 
 @login_required
@@ -458,6 +461,7 @@ def confirm_send_messages(request):
             'recipient_type': status_dict.get(recipient_type, recipient_type)
         })
     return JsonResponse({'error': 'Invalid request'}, status=400)
+
 ##############
 
 
@@ -542,3 +546,104 @@ def extra_contributions_view(request):
         "total_extra_contributions": total_extra_contributions,
         "reason_summary": reason_summary,
     })
+
+
+# ACCOUNTING
+def accounting_dashboard(request):
+    year = int(request.GET.get("year", datetime.now().year))  # Filter by year
+
+    # Total Income from contributions
+    total_income = Contribution.objects.filter(date_contributed__year=year).aggregate(Sum("amount"))["amount__sum"] or 0
+
+    # Total Expenses
+    total_expenses = Expense.objects.filter(date__year=year).aggregate(Sum("amount"))["amount__sum"] or 0
+
+    # Breakdown of expenses
+    benefit_expenses = Expense.objects.filter(category="Benefit", date__year=year).aggregate(Sum("amount"))[
+                           "amount__sum"] or 0
+    general_expenses = Expense.objects.filter(category="General", date__year=year).aggregate(Sum("amount"))[
+                           "amount__sum"] or 0
+    admin_expenses = Expense.objects.filter(category="Admin", date__year=year).aggregate(Sum("amount"))[
+                         "amount__sum"] or 0
+
+    # Cash on hand (remaining funds)
+    cash_on_hand = total_income - total_expenses
+
+    # List of benefits paid out
+    benefits = WelfareBenefit.objects.filter(date_awarded__year=year)
+
+    context = {
+        "year": year,
+        "total_income": total_income,
+        "total_expenses": total_expenses,
+        "cash_on_hand": cash_on_hand,
+        "benefit_expenses": benefit_expenses,
+        "general_expenses": general_expenses,
+        "admin_expenses": admin_expenses,
+        "benefits": benefits,
+    }
+
+    return render(request, "contributions/accounting_dashboard.html", context)
+
+
+@login_required
+def request_benefit(request):
+    """Allows users to request a welfare benefit."""
+    if request.method == "POST":
+        form = BenefitRequestForm(request.POST)
+        if form.is_valid():
+            benefit_request = form.save(commit=False)
+            benefit_request.user = request.user  # Assign logged-in user
+            benefit_request.save()
+            messages.success(request, "Your benefit request has been submitted.")
+            return redirect("dashboard")  # Redirect to user dashboard
+
+    else:
+        form = BenefitRequestForm()
+
+    return render(request, "contributions/request_benefit.html", {"form": form})
+
+
+@user_passes_test(is_staff)
+def review_benefit_requests(request):
+    """Displays all benefit requests for staff review."""
+    status_filter = request.GET.get("status", "Pending")
+    requests = BenefitRequest.objects.filter(status=status_filter).order_by("-requested_at")
+
+    return render(request, "contributions/review_requests.html", {"requests": requests, "status_filter": status_filter})
+
+
+@user_passes_test(is_staff)
+def process_benefit_request(request, request_id, decision):
+    """Approve or deny a benefit request and notify the user."""
+    benefit_request = get_object_or_404(BenefitRequest, id=request_id)
+
+    if benefit_request.status != "Pending":
+        messages.error(request, "This request has already been processed.")
+        return redirect("review_benefit_requests")
+
+    if decision == "accept":
+        benefit_request.status = "Accepted"
+    elif decision == "deny":
+        benefit_request.status = "Denied"
+    else:
+        messages.error(request, "Invalid decision.")
+        return redirect("review_benefit_requests")
+
+    benefit_request.reviewed_by = request.user
+    benefit_request.reviewed_at = now()
+    benefit_request.save()
+
+    # Send email notification
+    send_mail(
+        subject=f"Your Benefit Request has been {benefit_request.status}",
+        message=f"Hello {benefit_request.user.username},\n\n"
+                f"Your request for {benefit_request.benefit_type} benefit has been {benefit_request.status.lower()}.\n\n"
+                f"Best regards,\nWelfare Team",
+        from_email="welfare@example.com",
+        recipient_list=[benefit_request.user.email],
+        fail_silently=True,
+    )
+
+    messages.success(request, f"Request {benefit_request.status.lower()} successfully!")
+    return redirect("review_benefit_requests")

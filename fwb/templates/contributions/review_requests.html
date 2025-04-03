@@ -1,0 +1,48 @@
+{% extends "base.html" %}
+
+{% block content %}
+<h2>Benefit Requests</h2>
+
+<!-- Filter by status -->
+<form method="get">
+    <select name="status" onchange="this.form.submit()">
+        <option value="Pending" {% if status_filter == "Pending" %}selected{% endif %}>Pending</option>
+        <option value="Accepted" {% if status_filter == "Accepted" %}selected{% endif %}>Accepted</option>
+        <option value="Denied" {% if status_filter == "Denied" %}selected{% endif %}>Denied</option>
+    </select>
+</form>
+
+<table>
+    <thead>
+        <tr>
+            <th>User</th>
+            <th>Benefit Type</th>
+            <th>Amount</th>
+            <th>Event Date</th>
+            <th>Requested At</th>
+            <th>Status</th>
+            <th>Action</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for request in requests %}
+        <tr>
+            <td>{{ request.user.username }}</td>
+            <td>{{ request.benefit_type }}</td>
+            <td>{{ request.amount_requested }}</td>
+            <td>{{ request.event_date }}</td>
+            <td>{{ request.requested_at }}</td>
+            <td>{{ request.status }}</td>
+            <td>
+                {% if request.status == "Pending" %}
+                <a href="{% url 'process_benefit_request' request.id 'accept' %}">✅ Accept</a>
+                <a href="{% url 'process_benefit_request' request.id 'deny' %}">❌ Deny</a>
+                {% endif %}
+            </td>
+        </tr>
+        {% empty %}
+        <tr><td colspan="7">No requests found.</td></tr>
+        {% endfor %}
+    </tbody>
+</table>
+{% endblock %}

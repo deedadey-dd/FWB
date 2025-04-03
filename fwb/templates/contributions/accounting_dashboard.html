@@ -1,0 +1,37 @@
+{% extends "base.html" %}
+{% block content %}
+    <h2>Welfare Accounting Dashboard - {{ year }}</h2>
+
+    <table>
+        <tr>
+            <th>Total Income</th>
+            <td>${{ total_income }}</td>
+        </tr>
+        <tr>
+            <th>Total Expenses</th>
+            <td>${{ total_expenses }}</td>
+        </tr>
+        <tr>
+            <th>Cash on Hand</th>
+            <td>${{ cash_on_hand }}</td>
+        </tr>
+        <tr>
+            <th>Benefit Expenses</th>
+            <td>${{ benefit_expenses }}</td>
+        </tr>
+        <tr>
+            <th>General Welfare Expenses</th>
+            <td>${{ general_expenses }}</td>
+        </tr>
+    </table>
+
+    <!-- Dropdown for selecting year -->
+    <form method="get">
+        <select name="year">
+            {% for y in years %}
+            <option value="{{ y }}" {% if y == year %}selected{% endif %}>{{ y }}</option>
+            {% endfor %}
+        </select>
+        <button type="submit">View</button>
+    </form>
+{% endblock %}

@@ -167,11 +167,11 @@ PASSWORD_HASHERS = [
     'django.contrib.auth.hashers.ScryptPasswordHasher',
 ]
 
-SESSION_COOKIE_SECURE = True  # Forces HTTPS for cookies
-CSRF_COOKIE_SECURE = True  # Protects CSRF cookies
-SESSION_EXPIRE_AT_BROWSER_CLOSE = True  # Logs out on browser close
-SESSION_COOKIE_AGE = 1800  # 30 minutes timeout
-SESSION_COOKIE_HTTPONLY = True  # Prevents JavaScript access
+# SESSION_COOKIE_SECURE = True  # Forces HTTPS for cookies
+# CSRF_COOKIE_SECURE = True  # Protects CSRF cookies
+# SESSION_EXPIRE_AT_BROWSER_CLOSE = True  # Logs out on browser close
+# SESSION_COOKIE_AGE = 1800  # 30 minutes timeout
+# SESSION_COOKIE_HTTPONLY = True  # Prevents JavaScript access
 
 # Enforce HTTPS in production
 

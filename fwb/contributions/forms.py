@@ -1,6 +1,6 @@
 from django import forms
 from django.contrib.auth import get_user_model
-from .models import Contribution, ExtraContribution
+from .models import Contribution, ExtraContribution, BenefitRequest
 
 User = get_user_model()
 
@@ -66,3 +66,14 @@ class ContributionForm(forms.ModelForm):
         # if user:
         previous_reasons = ExtraContribution.objects.values_list("reason", flat=True).distinct()
         self.fields["previous_reason"].choices = [("", "Select a reason")] + [(r, r) for r in previous_reasons]
+
+
+class BenefitRequestForm(forms.ModelForm):
+    class Meta:
+        model = BenefitRequest
+        fields = ["benefit_type", "event_date", "amount_requested", "reason"]
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields["event_date"].widget.attrs.update({"type": "date"})
+        self.fields["reason"].widget.attrs.update({"placeholder": "Explain why you need this benefit."})

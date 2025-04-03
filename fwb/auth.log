@@ -453,3 +453,38 @@ Not Found: /favicon.ico
 Not Found: /favicon.ico
 Not Found: /favicon.ico
 Not Found: /favicon.ico
+Not Found: /favicon.ico
+Not Found: /favicon.ico
+Forbidden (CSRF cookie not set.): /accounts/login/
+Forbidden (CSRF cookie not set.): /accounts/login/
+Forbidden (CSRF cookie not set.): /accounts/login/
+Forbidden (CSRF cookie not set.): /accounts/login/
+Not Found: /favicon.ico
+Forbidden (CSRF cookie not set.): /accounts/login/
+Not Found: /favicon.ico
+Not Found: /favicon.ico
+Forbidden (CSRF cookie not set.): /accounts/login/
+Forbidden (CSRF cookie not set.): /accounts/login/
+Forbidden (CSRF cookie not set.): /accounts/login/
+Forbidden (CSRF cookie not set.): /accounts/login/
+Forbidden (CSRF cookie not set.): /accounts/login/
+Forbidden (CSRF cookie not set.): /accounts/login/
+Forbidden (CSRF cookie not set.): /accounts/login/
+Not Found: /favicon.ico
+Internal Server Error: /request-benefit/
+Traceback (most recent call last):
+  File "C:\Users\IT MINISTRY\PycharmProjects\FWB\.venv\Lib\site-packages\django\core\handlers\exception.py", line 55, in inner
+    response = get_response(request)
+  File "C:\Users\IT MINISTRY\PycharmProjects\FWB\.venv\Lib\site-packages\django\core\handlers\base.py", line 197, in _get_response
+    response = wrapped_callback(request, *callback_args, **callback_kwargs)
+  File "C:\Users\IT MINISTRY\PycharmProjects\FWB\.venv\Lib\site-packages\django\contrib\auth\decorators.py", line 60, in _view_wrapper
+    return view_func(request, *args, **kwargs)
+  File "C:\Users\IT MINISTRY\PycharmProjects\FWB\fwb\contributions\views.py", line 604, in request_benefit
+    return render(request, "contributions/request_benefit.html", {"form": form})
+  File "C:\Users\IT MINISTRY\PycharmProjects\FWB\.venv\Lib\site-packages\django\shortcuts.py", line 25, in render
+    content = loader.render_to_string(template_name, context, request, using=using)
+  File "C:\Users\IT MINISTRY\PycharmProjects\FWB\.venv\Lib\site-packages\django\template\loader.py", line 61, in render_to_string
+    template = get_template(template_name, using=using)
+  File "C:\Users\IT MINISTRY\PycharmProjects\FWB\.venv\Lib\site-packages\django\template\loader.py", line 19, in get_template
+    raise TemplateDoesNotExist(template_name, chain=chain)
+django.template.exceptions.TemplateDoesNotExist: contributions/request_benefit.html

@@ -162,7 +162,13 @@ class BenefitRequest(models.Model):
     requested_at = models.DateTimeField(auto_now_add=True)
 
     def clean(self):
-        if self.amount_requested <= Decimal("0"):
+        if self.amount_requested is None:
+            raise ValidationError({"amount_requested": "This field is required."})
+
+        # Ensure amount_requested is treated as a Decimal
+        amount = Decimal(str(self.amount_requested))
+
+        if amount <= Decimal("0"):
             raise ValidationError({"amount_requested": "The requested amount must be greater than zero."})
 
         if self.benefit_type == "other" and not self.reason:

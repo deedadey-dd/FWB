@@ -30,6 +30,8 @@ DEBUG = True
 
 ALLOWED_HOSTS = ['*']
 
+CRISPY_ALLOWED_TEMPLATE_PACKS = "bootstrap5"
+CRISPY_TEMPLATE_PACK = "bootstrap5"
 
 # Application definition
 
@@ -37,6 +39,8 @@ INSTALLED_APPS = [
     'axes',
     'dbbackup',
     'phonenumber_field',
+    "crispy_forms",
+    "crispy_bootstrap5",
     'users',
     'contributions',
     'django.contrib.admin',

@@ -1,0 +1,49 @@
+{% extends "base.html" %}
+{% load crispy_forms_tags %}
+
+{% block title %}Request a Benefit{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <h2 class="mb-4">Request a Benefit</h2>
+
+    <form method="POST">
+        {% csrf_token %}
+
+        <div class="mb-3">
+            <label for="benefit_type" class="form-label">Select Benefit Type:</label>
+            <select id="benefit_type" name="benefit_type" class="form-select" required>
+                <option value="" selected disabled>-- Choose One --</option>
+                <option value="wedding">Wedding Benefit</option>
+                <option value="funeral">Funeral Benefit</option>
+                <option value="childbirth">Childbirth Benefit</option>
+                <option value="other">Other (Specify Below)</option>
+            </select>
+        </div>
+
+        <div class="mb-3">
+            <label for="event_date" class="form-label">Event Date:</label>
+            <input type="date" id="event_date" name="event_date" class="form-control" required>
+        </div>
+
+        <div class="mb-3" id="reason_container" style="display: none;">
+            <label for="reason" class="form-label">Reason for Request (if 'Other'):</label>
+            <textarea id="reason" name="reason" class="form-control" rows="3"></textarea>
+        </div>
+
+        <button type="submit" class="btn btn-primary">Submit Request</button>
+    </form>
+</div>
+
+<script>
+    document.getElementById("benefit_type").addEventListener("change", function () {
+        var reasonContainer = document.getElementById("reason_container");
+        if (this.value === "other") {
+            reasonContainer.style.display = "block";
+        } else {
+            reasonContainer.style.display = "none";
+        }
+    });
+</script>
+
+{% endblock %}

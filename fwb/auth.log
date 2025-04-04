@@ -693,3 +693,87 @@ Traceback (most recent call last):
        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 TypeError: '<=' not supported between instances of 'NoneType' and 'decimal.Decimal'
 Not Found: /accounting_dashboard
+Not Found: /favicon.ico
+Not Found: /favicon.ico
+Internal Server Error: /request-benefit/
+Traceback (most recent call last):
+  File "C:\Users\IT MINISTRY\PycharmProjects\FWB\.venv\Lib\site-packages\django\forms\models.py", line 498, in _post_clean
+    self.instance.full_clean(exclude=exclude, validate_unique=False)
+    ~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\IT MINISTRY\PycharmProjects\FWB\.venv\Lib\site-packages\django\db\models\base.py", line 1651, in full_clean
+    raise ValidationError(errors)
+django.core.exceptions.ValidationError: {'amount_requested': ['This field is required.']}
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "C:\Users\IT MINISTRY\PycharmProjects\FWB\.venv\Lib\site-packages\django\core\handlers\exception.py", line 55, in inner
+    response = get_response(request)
+  File "C:\Users\IT MINISTRY\PycharmProjects\FWB\.venv\Lib\site-packages\django\core\handlers\base.py", line 197, in _get_response
+    response = wrapped_callback(request, *callback_args, **callback_kwargs)
+  File "C:\Users\IT MINISTRY\PycharmProjects\FWB\.venv\Lib\site-packages\django\contrib\auth\decorators.py", line 60, in _view_wrapper
+    return view_func(request, *args, **kwargs)
+  File "C:\Users\IT MINISTRY\PycharmProjects\FWB\fwb\contributions\views.py", line 596, in request_benefit
+    if form.is_valid():
+       ~~~~~~~~~~~~~^^
+  File "C:\Users\IT MINISTRY\PycharmProjects\FWB\.venv\Lib\site-packages\django\forms\forms.py", line 197, in is_valid
+    return self.is_bound and not self.errors
+                                 ^^^^^^^^^^^
+  File "C:\Users\IT MINISTRY\PycharmProjects\FWB\.venv\Lib\site-packages\django\forms\forms.py", line 192, in errors
+    self.full_clean()
+    ~~~~~~~~~~~~~~~^^
+  File "C:\Users\IT MINISTRY\PycharmProjects\FWB\.venv\Lib\site-packages\django\forms\forms.py", line 327, in full_clean
+    self._post_clean()
+    ~~~~~~~~~~~~~~~~^^
+  File "C:\Users\IT MINISTRY\PycharmProjects\FWB\.venv\Lib\site-packages\django\forms\models.py", line 500, in _post_clean
+    self._update_errors(e)
+    ~~~~~~~~~~~~~~~~~~~^^^
+  File "C:\Users\IT MINISTRY\PycharmProjects\FWB\.venv\Lib\site-packages\django\forms\models.py", line 472, in _update_errors
+    self.add_error(None, errors)
+    ~~~~~~~~~~~~~~^^^^^^^^^^^^^^
+  File "C:\Users\IT MINISTRY\PycharmProjects\FWB\.venv\Lib\site-packages\django\forms\forms.py", line 292, in add_error
+    raise ValueError(
+    ...<2 lines>...
+    )
+ValueError: 'BenefitRequestForm' has no field named 'amount_requested'.
+Internal Server Error: /request-benefit/
+Traceback (most recent call last):
+  File "C:\Users\IT MINISTRY\PycharmProjects\FWB\.venv\Lib\site-packages\django\forms\models.py", line 498, in _post_clean
+    self.instance.full_clean(exclude=exclude, validate_unique=False)
+    ~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\IT MINISTRY\PycharmProjects\FWB\.venv\Lib\site-packages\django\db\models\base.py", line 1651, in full_clean
+    raise ValidationError(errors)
+django.core.exceptions.ValidationError: {'amount_requested': ['This field is required.']}
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "C:\Users\IT MINISTRY\PycharmProjects\FWB\.venv\Lib\site-packages\django\core\handlers\exception.py", line 55, in inner
+    response = get_response(request)
+  File "C:\Users\IT MINISTRY\PycharmProjects\FWB\.venv\Lib\site-packages\django\core\handlers\base.py", line 197, in _get_response
+    response = wrapped_callback(request, *callback_args, **callback_kwargs)
+  File "C:\Users\IT MINISTRY\PycharmProjects\FWB\.venv\Lib\site-packages\django\contrib\auth\decorators.py", line 60, in _view_wrapper
+    return view_func(request, *args, **kwargs)
+  File "C:\Users\IT MINISTRY\PycharmProjects\FWB\fwb\contributions\views.py", line 596, in request_benefit
+    if form.is_valid():
+       ~~~~~~~~~~~~~^^
+  File "C:\Users\IT MINISTRY\PycharmProjects\FWB\.venv\Lib\site-packages\django\forms\forms.py", line 197, in is_valid
+    return self.is_bound and not self.errors
+                                 ^^^^^^^^^^^
+  File "C:\Users\IT MINISTRY\PycharmProjects\FWB\.venv\Lib\site-packages\django\forms\forms.py", line 192, in errors
+    self.full_clean()
+    ~~~~~~~~~~~~~~~^^
+  File "C:\Users\IT MINISTRY\PycharmProjects\FWB\.venv\Lib\site-packages\django\forms\forms.py", line 327, in full_clean
+    self._post_clean()
+    ~~~~~~~~~~~~~~~~^^
+  File "C:\Users\IT MINISTRY\PycharmProjects\FWB\.venv\Lib\site-packages\django\forms\models.py", line 500, in _post_clean
+    self._update_errors(e)
+    ~~~~~~~~~~~~~~~~~~~^^^
+  File "C:\Users\IT MINISTRY\PycharmProjects\FWB\.venv\Lib\site-packages\django\forms\models.py", line 472, in _update_errors
+    self.add_error(None, errors)
+    ~~~~~~~~~~~~~~^^^^^^^^^^^^^^
+  File "C:\Users\IT MINISTRY\PycharmProjects\FWB\.venv\Lib\site-packages\django\forms\forms.py", line 292, in add_error
+    raise ValueError(
+    ...<2 lines>...
+    )
+ValueError: 'BenefitRequestForm' has no field named 'amount_requested'.

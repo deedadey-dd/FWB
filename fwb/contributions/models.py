@@ -43,7 +43,7 @@ class MonthlyContribution(models.Model):
     amount = models.DecimalField(max_digits=10, decimal_places=2, default=0)
 
     def clean(self):
-        if self.amount is not None and self.amount <= Decimal("0"):  # Convert to Decimal
+        if self.amount is not None and Decimal(str(self.amount)) <= Decimal("0"):  # Convert to Decimal
             raise ValidationError({"amount": "The contribution amount must be greater than zero."})
 
     def save(self, *args, **kwargs):
@@ -64,7 +64,7 @@ class ExtraContribution(models.Model):
     date_contributed = models.DateField(default=now)
 
     def clean(self):
-        if self.amount is not None and self.amount <= Decimal("0"):  # Convert to Decimal
+        if self.amount is not None and Decimal(str(self.amount)) <= Decimal("0"):  # Convert to Decimal
             raise ValidationError({"amount": "The contribution amount must be greater than zero."})
 
     def save(self, *args, **kwargs):
@@ -84,7 +84,7 @@ class ContributionRecord(models.Model):
     recorded_at = models.DateTimeField(auto_now_add=True)
 
     def clean(self):
-        if self.amount is not None and self.amount <= Decimal("0"):  # Convert to Decimal
+        if self.amount is not None and Decimal(str(self.amount)) <= Decimal("0"):  # Convert to Decimal
             raise ValidationError({"amount": "The contribution amount must be greater than zero."})
 
     def save(self, *args, **kwargs):
@@ -117,12 +117,14 @@ class WelfareBenefit(models.Model):
     )
 
     def total_expense(self):
-        return self.amount_awarded + self.extra_costs  # Total spent on benefit
+        return Decimal(str(self.amount_awarded)) + Decimal(str(self.extra_costs))  # Total spent on benefit
 
     def clean(self):
-        if self.amount_awarded <= Decimal("0"):
+        amount_awarded = Decimal(str(self.amount_awarded))
+        extra_costs = Decimal(str(self.extra_costs))
+        if amount_awarded <= Decimal("0"):
             raise ValidationError({"amount_awarded": "The benefit amount must be greater than zero."})
-        if self.extra_costs < Decimal("0"):
+        if extra_costs < Decimal("0"):
             raise ValidationError({"extra_costs": "Extra costs cannot be negative."})
 
     def save(self, *args, **kwargs):
@@ -157,7 +159,8 @@ class BenefitRequest(models.Model):
     status = models.CharField(
         max_length=10, choices=BenefitRequestStatus.choices, default=BenefitRequestStatus.PENDING
     )
-    reviewed_by = models.ForeignKey(User, null=True, blank=True, on_delete=models.SET_NULL, related_name="benefit_reviews")
+    reviewed_by = models.ForeignKey(User, null=True, blank=True, on_delete=models.SET_NULL,
+                                    related_name="benefit_reviews")
     reviewed_at = models.DateTimeField(null=True, blank=True)
     requested_at = models.DateTimeField(auto_now_add=True)
 
@@ -204,7 +207,10 @@ class Expense(models.Model):
     )  # Only staff should record expenses
 
     def clean(self):
-        if self.amount <= Decimal("0"):
+        if self.amount is None:
+            raise ValidationError({"amount": "This field is required"})
+        amount_used = Decimal(str(self.amount))
+        if amount_used <= Decimal("0"):
             raise ValidationError({"amount": "The expense amount must be greater than zero."})
 
     def save(self, *args, **kwargs):
@@ -214,6 +220,3 @@ class Expense(models.Model):
     def __str__(self):
         recipient = self.user.username if self.user else "All"
         return f"{self.category} Expense - {recipient}: {self.amount}"
-
-
-

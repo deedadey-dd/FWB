@@ -15,5 +15,6 @@ urlpatterns = [
     path("request-benefit/", request_benefit, name="request_benefit"),
     path("benefit-requests/", review_benefit_requests, name="review_benefit_requests"),
     path("benefit-requests/<int:request_id>/<str:decision>/", process_benefit_request, name="process_benefit_request"),
-    path("accounting-dashboard/", accounting_dashboard, name="accounting_dashboard")
+    path("accounting-dashboard/", accounting_dashboard, name="accounting_dashboard"),
+    path("review-benefit-requests/", review_benefit_requests, name="review_benefit_requests"),
 ]

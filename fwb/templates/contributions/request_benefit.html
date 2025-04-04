@@ -26,9 +26,16 @@
             <input type="date" id="event_date" name="event_date" class="form-control" required>
         </div>
 
+        <!-- Reason for Other -->
         <div class="mb-3" id="reason_container" style="display: none;">
             <label for="reason" class="form-label">Reason for Request (if 'Other'):</label>
             <textarea id="reason" name="reason" class="form-control" rows="3"></textarea>
+        </div>
+
+        <!-- Amount Requested (only for 'Other') -->
+        <div class="mb-3" id="amount_container" style="display: none;">
+            <label for="amount_requested" class="form-label">Requested Amount:</label>
+            <input type="number" id="amount_requested" name="amount_requested" class="form-control" step="0.01" min="0">
         </div>
 
         <button type="submit" class="btn btn-primary">Submit Request</button>
@@ -38,10 +45,16 @@
 <script>
     document.getElementById("benefit_type").addEventListener("change", function () {
         var reasonContainer = document.getElementById("reason_container");
+        var amountContainer = document.getElementById("amount_container");
+
         if (this.value === "other") {
             reasonContainer.style.display = "block";
+            amountContainer.style.display = "block";  // Show amount field
+            document.getElementById("amount_requested").required = true;
         } else {
             reasonContainer.style.display = "none";
+            amountContainer.style.display = "none";  // Hide amount field
+            document.getElementById("amount_requested").required = false;
         }
     });
 </script>

@@ -1,11 +1,12 @@
 from django.shortcuts import render, redirect, get_object_or_404
+from django.contrib.admin.views.decorators import staff_member_required
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required, user_passes_test
 from django.core.mail import send_mail, get_connection
 from django.utils.timezone import now
 from .models import Contribution, ContributionSetting, ContributionRecord, ExtraContribution, WelfareBenefit, Expense, \
     BenefitRequest
-from .forms import ContributionForm, BenefitRequestForm
+from .forms import ContributionForm, BenefitRequestForm, BenefitReviewForm
 from .utils import allocate_contribution
 from django.db.models.functions import ExtractYear, ExtractMonth
 from django.db.models import Sum, Q
@@ -17,6 +18,7 @@ from django.http import HttpResponse
 from django.core.paginator import Paginator
 from openpyxl import Workbook
 from django.http import JsonResponse
+from decimal import Decimal
 
 
 STATUS_OPTIONS = [
@@ -593,10 +595,15 @@ def request_benefit(request):
         form = BenefitRequestForm(request.POST)
         if form.is_valid():
             benefit_request = form.save(commit=False)
-            benefit_request.user = request.user  # Assign logged-in user
+            benefit_request.user = request.user
+
+            # If benefit type is NOT "Other", set amount_requested to 0.00
+            if benefit_request.benefit_type != "other":
+                benefit_request.amount_requested = Decimal("0.00")
+
             benefit_request.save()
             messages.success(request, "Your benefit request has been submitted.")
-            return redirect("dashboard")  # Redirect to user dashboard
+            return redirect("dashboard")
 
     else:
         form = BenefitRequestForm()
@@ -605,12 +612,31 @@ def request_benefit(request):
 
 
 @user_passes_test(is_staff)
+@staff_member_required
 def review_benefit_requests(request):
-    """Displays all benefit requests for staff review."""
-    status_filter = request.GET.get("status", "Pending")
-    requests = BenefitRequest.objects.filter(status=status_filter).order_by("-requested_at")
+    """Allows staff to review and respond to benefit requests."""
+    requests = BenefitRequest.objects.filter(status="Pending")
 
-    return render(request, "contributions/review_requests.html", {"requests": requests, "status_filter": status_filter})
+    if request.method == "POST":
+        form = BenefitReviewForm(request.POST)
+        if form.is_valid():
+            request_id = request.POST.get("request_id")
+            benefit_request = get_object_or_404(BenefitRequest, id=request_id)
+
+            # Update request details
+            benefit_request.amount_requested = form.cleaned_data["amount_requested"]
+            benefit_request.status = form.cleaned_data["status"]
+            benefit_request.reviewed_by = request.user
+            benefit_request.reviewed_at = now()
+            benefit_request.save()
+
+            messages.success(request, "Benefit request updated successfully.")
+            return redirect("review_benefit_requests")
+
+    else:
+        form = BenefitReviewForm()
+
+    return render(request, "contributions/review_requests.html", {"requests": requests, "form": form})
 
 
 @user_passes_test(is_staff)

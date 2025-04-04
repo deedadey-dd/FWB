@@ -1,48 +1,63 @@
 {% extends "base.html" %}
+{% load crispy_forms_tags %}
+
+{% block title %}Review Benefit Requests{% endblock %}
 
 {% block content %}
-<h2>Benefit Requests</h2>
+<div class="container mt-4">
+    <h2>Review Benefit Requests</h2>
 
-<!-- Filter by status -->
-<form method="get">
-    <select name="status" onchange="this.form.submit()">
-        <option value="Pending" {% if status_filter == "Pending" %}selected{% endif %}>Pending</option>
-        <option value="Accepted" {% if status_filter == "Accepted" %}selected{% endif %}>Accepted</option>
-        <option value="Denied" {% if status_filter == "Denied" %}selected{% endif %}>Denied</option>
-    </select>
-</form>
+    {% if messages %}
+        <div class="alert alert-success">
+            {% for message in messages %}
+                {{ message }}
+            {% endfor %}
+        </div>
+    {% endif %}
 
-<table>
-    <thead>
-        <tr>
-            <th>User</th>
-            <th>Benefit Type</th>
-            <th>Amount</th>
-            <th>Event Date</th>
-            <th>Requested At</th>
-            <th>Status</th>
-            <th>Action</th>
-        </tr>
-    </thead>
-    <tbody>
-        {% for request in requests %}
-        <tr>
-            <td>{{ request.user.username }}</td>
-            <td>{{ request.benefit_type }}</td>
-            <td>{{ request.amount_requested }}</td>
-            <td>{{ request.event_date }}</td>
-            <td>{{ request.requested_at }}</td>
-            <td>{{ request.status }}</td>
-            <td>
-                {% if request.status == "Pending" %}
-                <a href="{% url 'process_benefit_request' request.id 'accept' %}">✅ Accept</a>
-                <a href="{% url 'process_benefit_request' request.id 'deny' %}">❌ Deny</a>
-                {% endif %}
-            </td>
-        </tr>
-        {% empty %}
-        <tr><td colspan="7">No requests found.</td></tr>
-        {% endfor %}
-    </tbody>
-</table>
+    <table class="table table-striped">
+        <thead>
+            <tr>
+                <th>User</th>
+                <th>Benefit Type</th>
+                <th>Event Date</th>
+                <th>Reason</th>
+                <th>Requested Amount</th>
+                <th>Status</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for request in requests %}
+                <tr>
+                    <td>{{ request.user.username }}</td>
+                    <td>{{ request.get_benefit_type_display }}</td>
+                    <td>{{ request.event_date }}</td>
+                    <td>{{ request.reason|default:"N/A" }}</td>
+                    <td>
+                        <form method="POST" action="{% url 'review_benefit_requests' %}">
+                            {% csrf_token %}
+                            <input type="hidden" name="request_id" value="{{ request.id }}">
+                            <input type="number" name="amount_requested" class="form-control" value="{{ request.amount_requested }}" min="0" step="0.01">
+                    </td>
+                    <td>
+                        <select name="status" class="form-select">
+                            <option value="Pending" {% if request.status == "Pending" %}selected{% endif %}>Pending</option>
+                            <option value="Accepted" {% if request.status == "Accepted" %}selected{% endif %}>Accepted</option>
+                            <option value="Denied" {% if request.status == "Denied" %}selected{% endif %}>Denied</option>
+                        </select>
+                    </td>
+                    <td>
+                            <button type="submit" class="btn btn-success btn-sm">Save</button>
+                        </form>
+                    </td>
+                </tr>
+            {% empty %}
+                <tr>
+                    <td colspan="7" class="text-center">No pending requests.</td>
+                </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
 {% endblock %}

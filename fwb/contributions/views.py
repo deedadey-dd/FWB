@@ -1,16 +1,19 @@
+from django.core.exceptions import ValidationError
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.admin.views.decorators import staff_member_required
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required, user_passes_test
 from django.core.mail import send_mail, get_connection
 from django.utils.timezone import now
+from django.views.decorators.http import require_POST
+
 from .models import Contribution, ContributionSetting, ContributionRecord, ExtraContribution, WelfareBenefit, Expense, \
-    BenefitRequest
+    BenefitRequest, BenefitRequestStatus, ExpenseCategory
 from .forms import ContributionForm, BenefitRequestForm, BenefitReviewForm
 from .utils import allocate_contribution
 from django.db.models.functions import ExtractYear, ExtractMonth
 from django.db.models import Sum, Q
-from datetime import datetime
+from datetime import datetime, date
 from users.models import CustomUser
 from collections import defaultdict
 from django.conf import settings
@@ -107,6 +110,9 @@ def dashboard(request):
     current_month = current_date.month  # Get current month
     last_two_years = [current_year - 1, current_year]  # Last year and this year only
 
+    BenefitRequest.objects.filter(user=request.user, event_date__gt=date.today())
+    upcoming_benefits = BenefitRequest.objects.filter(user=request.user, event_date__gt=date.today())
+
     contribution_setting = ContributionSetting.objects.filter(year=current_year).first()
     monthly_amount = contribution_setting.amount if contribution_setting else 0
 
@@ -188,6 +194,7 @@ def dashboard(request):
         'month_range': range(1, 13),
         'total_due_year_end': total_due_year_end,
         'advance_payment': advance_payment,
+        'upcoming_benefits': upcoming_benefits,
     }
 
     return render(request, 'contributions/dashboard.html', context)
@@ -590,32 +597,87 @@ def accounting_dashboard(request):
 
 @login_required
 def request_benefit(request):
-    """Allows users to request a welfare benefit."""
     if request.method == "POST":
         form = BenefitRequestForm(request.POST)
         if form.is_valid():
             benefit_request = form.save(commit=False)
             benefit_request.user = request.user
-
-            # If benefit type is NOT "Other", set amount_requested to 0.00
-            if benefit_request.benefit_type != "other":
-                benefit_request.amount_requested = Decimal("0.00")
-
             benefit_request.save()
             messages.success(request, "Your benefit request has been submitted.")
             return redirect("dashboard")
-
+        else:
+            messages.error(request, "Please correct the errors below.")
     else:
         form = BenefitRequestForm()
 
-    return render(request, "contributions/request_benefit.html", {"form": form})
+    return render(request, "contributions/request_benefit.html", {
+        "form": form,
+        "benefit_types": BenefitRequest.benefit_type.field.choices
+    })
+
+
+@login_required
+def delete_benefit_request(request, pk):
+    benefit = get_object_or_404(BenefitRequest, pk=pk, user=request.user)
+
+    if benefit.status != 'Pending':
+        messages.error(request, "You can only delete requests that are still pending.")
+        return redirect('dashboard')
+
+    if request.method == "POST":
+        # subject = f"Benefit Request Deleted by {request.user.get_full_name() or request.user.username}"
+        # message = (
+        #     f"The following benefit request was deleted by {request.user}:\n\n"
+        #     f"Benefit Type: {benefit.benefit_type}\n"
+        #     f"Event Date: {benefit.event_date}\n"
+        #     f"Amount Requested: GH₵ {benefit.amount_requested}\n"
+        #     f"Reason: {benefit.reason}\n"
+        #     f"Status: {benefit.status}"
+        # )
+        # send_mail(
+        #     subject,
+        #     message,
+        #     settings.DEFAULT_FROM_EMAIL,
+        #     ['freewelfareband@gmail.com'],
+        #     fail_silently=False,
+        # )
+
+        benefit.delete()
+        messages.success(request, "Benefit request deleted successfully.")
+        return redirect('dashboard')
+
+    messages.error(request, "Invalid request.")
+    return redirect('dashboard')
+
+
+@login_required
+def edit_benefit_request(request, pk):
+    benefit = get_object_or_404(BenefitRequest, pk=pk, user=request.user)
+
+    if benefit.status != 'Pending':
+        messages.error(request, "Only Pending requests can be edited.")
+        return redirect('dashboard')
+
+    if request.method == 'POST':
+        form = BenefitRequestForm(request.POST, instance=benefit)
+        if form.is_valid():
+            form.save()
+            messages.success(request, "Benefit request updated successfully.")
+            return redirect('dashboard')
+    else:
+        form = BenefitRequestForm(instance=benefit)
+
+    return render(request, 'contributions/edit_benefit.html', {'form': form})
 
 
 @user_passes_test(is_staff)
 @staff_member_required
 def review_benefit_requests(request):
     """Allows staff to review and respond to benefit requests."""
-    requests = BenefitRequest.objects.filter(status="Pending")
+    requests = BenefitRequest.objects.filter(
+        fulfilled=False,
+        status__in=["Pending", "Accepted"]
+    ).order_by('-requested_at')
 
     if request.method == "POST":
         form = BenefitReviewForm(request.POST)
@@ -639,37 +701,126 @@ def review_benefit_requests(request):
     return render(request, "contributions/review_requests.html", {"requests": requests, "form": form})
 
 
-@user_passes_test(is_staff)
-def process_benefit_request(request, request_id, decision):
-    """Approve or deny a benefit request and notify the user."""
-    benefit_request = get_object_or_404(BenefitRequest, id=request_id)
+# @user_passes_test(is_staff)
+# def process_benefit_request(request, request_id, decision):
+#     """Approve or deny a benefit request and notify the user."""
+#     benefit_request = get_object_or_404(BenefitRequest, id=request_id)
+#
+#     if benefit_request.status != "Pending":
+#         messages.error(request, "This request has already been processed.")
+#         return redirect("review_benefit_requests")
+#
+#     if decision == "accept":
+#         benefit_request.status = "Accepted"
+#     elif decision == "deny":
+#         benefit_request.status = "Denied"
+#     else:
+#         messages.error(request, "Invalid decision.")
+#         return redirect("review_benefit_requests")
+#
+#     benefit_request.reviewed_by = request.user
+#     benefit_request.reviewed_at = now()
+#     benefit_request.save()
+#
+#     # Send email notification
+#     send_mail(
+#         subject=f"Your Benefit Request has been {benefit_request.status}",
+#         message=f"Hello {benefit_request.user.username},\n\n"
+#                 f"Your request for {benefit_request.benefit_type} benefit has been {benefit_request.status.lower()}.\n\n"
+#                 f"Best regards,\nWelfare Team",
+#         from_email="welfare@example.com",
+#         recipient_list=[benefit_request.user.email],
+#         fail_silently=True,
+#     )
+#
+#     messages.success(request, f"Request {benefit_request.status.lower()} successfully!")
+#     return redirect("review_benefit_requests")
 
-    if benefit_request.status != "Pending":
-        messages.error(request, "This request has already been processed.")
-        return redirect("review_benefit_requests")
 
-    if decision == "accept":
-        benefit_request.status = "Accepted"
-    elif decision == "deny":
-        benefit_request.status = "Denied"
-    else:
-        messages.error(request, "Invalid decision.")
-        return redirect("review_benefit_requests")
+@require_POST
+@login_required
+def fulfill_benefit_request(request, request_id):  # Changed from 'pk' to 'request_id'
+    benefit_request = get_object_or_404(BenefitRequest, id=request_id, status='Accepted', fulfilled=False)
 
-    benefit_request.reviewed_by = request.user
-    benefit_request.reviewed_at = now()
-    benefit_request.save()
+    try:
+        amount_awarded = Decimal(request.POST.get('amount_awarded'))
+        extra_costs = Decimal(request.POST.get('extra_costs', '0'))
 
-    # Send email notification
-    send_mail(
-        subject=f"Your Benefit Request has been {benefit_request.status}",
-        message=f"Hello {benefit_request.user.username},\n\n"
-                f"Your request for {benefit_request.benefit_type} benefit has been {benefit_request.status.lower()}.\n\n"
-                f"Best regards,\nWelfare Team",
-        from_email="welfare@example.com",
-        recipient_list=[benefit_request.user.email],
-        fail_silently=True,
-    )
+        # Create the WelfareBenefit record
+        welfare_benefit = WelfareBenefit.objects.create(
+            user=benefit_request.user,
+            benefit_type=benefit_request.benefit_type,
+            amount_awarded=amount_awarded,
+            extra_costs=extra_costs,
+            recorded_by=request.user
+        )
 
-    messages.success(request, f"Request {benefit_request.status.lower()} successfully!")
-    return redirect("review_benefit_requests")
+        # Create the Expense record
+        Expense.objects.create(
+            user=benefit_request.user,
+            description=request.POST.get('expense_notes',
+                                         f"{benefit_request.get_benefit_type_display()} Benefit for {benefit_request.user.get_full_name()}"),
+            amount=amount_awarded + extra_costs,
+            category=ExpenseCategory.BENEFIT,
+            recorded_by=request.user
+        )
+
+        # Mark the request as fulfilled
+        benefit_request.fulfilled = True
+        benefit_request.save()
+
+        messages.success(request, "Benefit fulfilled and expense recorded successfully")
+    except Exception as e:
+        messages.error(request, f"Error fulfilling benefit: {str(e)}")
+
+    return redirect('all_benefit_requests')
+
+
+def all_benefit_requests(request):
+    # Get filter parameters from request
+    status_filter = request.GET.get('status', 'all')
+    benefit_type_filter = request.GET.get('benefit_type', 'all')
+    date_from = request.GET.get('date_from')
+    date_to = request.GET.get('date_to')
+
+    # Start with all requests
+    requests = BenefitRequest.objects.all().order_by('-requested_at')
+
+    # Apply filters
+    if status_filter != 'all':
+        if status_filter == 'fulfilled':
+            requests = requests.filter(fulfilled=True)
+        else:
+            requests = requests.filter(status=status_filter, fulfilled=False)
+
+    if benefit_type_filter != 'all':
+        requests = requests.filter(benefit_type=benefit_type_filter)
+
+    if date_from:
+        requests = requests.filter(requested_at__gte=date_from)
+
+    if date_to:
+        requests = requests.filter(requested_at__lte=date_to)
+
+    context = {
+        'requests': requests,
+        'status_choices': BenefitRequestStatus.choices + [('fulfilled', 'Fulfilled')],
+        'benefit_types': BenefitRequest.benefit_type.field.choices,
+        'current_status': status_filter,
+        'current_benefit_type': benefit_type_filter,
+        'date_from': date_from,
+        'date_to': date_to,
+    }
+    return render(request, 'contributions/all_benefits.html', context)
+
+
+def benefit_request_detail(request, pk):
+    benefit_request = get_object_or_404(BenefitRequest, pk=pk)
+    welfare_benefit = WelfareBenefit.objects.filter(user=benefit_request.user,
+                                                    benefit_type=benefit_request.benefit_type).first()
+
+    context = {
+        'request': benefit_request,
+        'welfare_benefit': welfare_benefit,
+    }
+    return render(request, 'contributions/benefit_detail.html', context)

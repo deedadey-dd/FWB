@@ -39,33 +39,31 @@ class ContributionForm(forms.ModelForm):
 class BenefitRequestForm(forms.ModelForm):
     class Meta:
         model = BenefitRequest
-        fields = ["benefit_type", "event_date", "amount_requested", "reason"]
+        fields = ['benefit_type', 'event_date', 'reason', 'amount_requested']
+        widgets = {
+            'event_date': forms.DateInput(attrs={'type': 'date'}),
+        }
 
-    def clean_amount_requested(self):
-        cleaned_data = self.cleaned_data
-        benefit_type = cleaned_data.get("benefit_type")
-        amount_requested = cleaned_data.get("amount_requested")
+    def clean(self):
+        cleaned_data = super().clean()
+        benefit_type = cleaned_data.get('benefit_type')
+        amount_requested = cleaned_data.get('amount_requested')
+        reason = cleaned_data.get('reason')
 
         if benefit_type == "other":
-            if amount_requested is None or amount_requested <= 0:
-                raise forms.ValidationError("You must enter a valid amount when selecting 'Other'.")
+            if not amount_requested:
+                self.add_error('amount_requested', "Amount is required for 'Other' benefit type.")
+            if amount_requested and amount_requested <= 0:
+                self.add_error('amount_requested', "Amount must be greater than zero.")
+            if not reason:
+                self.add_error('reason', "Reason is required for 'Other' benefit type.")
         else:
-            return 0  # Automatically set amount to 0 for non-"Other" benefits
+            if amount_requested:
+                self.add_error('amount_requested', "Amount should not be set for standard benefit types.")
+            if reason:
+                self.add_error('reason', "Reason should not be set for standard benefit types.")
 
-        return amount_requested
-
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-
-        # Make `event_date` a date picker
-        self.fields["event_date"].widget.attrs.update({"type": "date"})
-
-        # Add placeholder for reason field
-        self.fields["reason"].widget.attrs.update({"placeholder": "Explain why you need this benefit."})
-
-        # Hide `amount_requested` unless benefit type is "Other"
-        if self.instance and self.instance.benefit_type != "other":
-            self.fields.pop("amount_requested", None)  # Remove the field
+        return cleaned_data
 
 
 class BenefitReviewForm(forms.ModelForm):

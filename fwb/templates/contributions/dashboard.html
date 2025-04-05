@@ -6,6 +6,7 @@
         <div class="col-md-6 card-body">
             <h2 class="text-center">Hello {{ first_name|title }}</h2>
             <h4 class="text-center">Welcome to your Dashboard</h4>
+
             <br>
                 <!-- Health Status -->
             <div class="text-center mb-3">
@@ -28,7 +29,7 @@
         <div class="alert alert-info text-center col-md-6">
             <strong><span id="datetime"></span></strong>
             <div class="alert alert-info">
-                <h4>Contribution: <br> <strong>GHȻ {{ monthly_amount }}/month</strong> for {{ current_year }}</h4>
+                <h4><strong>GHȻ {{ monthly_amount }}/month</strong></h4>
             </div>
         </div>
     </div>
@@ -108,6 +109,79 @@
             </div>
         </div>
     </div>
+
+    <!-- Upcoming Benefit Requests -->
+    <div class="row mt-4">
+        <div class="col">
+            <div class="card shadow-sm">
+                <div class="card-header bg-success text-white">
+                    <h5>Your Upcoming Benefit Requests</h5>
+                </div>
+                <div class="card-body">
+                    {% if upcoming_benefits %}
+                        <div class="table-responsive">
+                            <table class="table table-hover table-bordered text-center align-middle">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th>#</th>
+                                        <th>Benefit Type</th>
+                                        <th>Event Date</th>
+                                        <th>Amount (GHȻ)</th>
+                                        <th>Status</th>
+                                        <th>Edit</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for request in upcoming_benefits %}
+                                        <tr>
+                                            <td>{{ forloop.counter }}</td>
+                                            <td>{{ request.get_benefit_type_display }}</td>
+                                            <td>{{ request.event_date|date:"M d, Y" }}</td>
+                                            <td>{{ request.amount_requested }}</td>
+                                            <td>
+                                                <span class="badge
+                                                    {% if request.status == 'pending' %}
+                                                        bg-warning text-dark
+                                                    {% elif request.status == 'approved' %}
+                                                        bg-success
+                                                    {% elif request.status == 'rejected' %}
+                                                        bg-danger
+                                                    {% else %}
+                                                        bg-secondary
+                                                    {% endif %}
+                                                ">
+                                                    {{ request.status|capfirst }}
+                                                </span>
+                                            </td>
+                                            <td>
+                                                {% if request.status == 'Pending' %}
+                                                <!-- Edit Button -->
+                                                <a href="{% url 'edit_benefit' request.pk %}" class="btn btn-sm btn-outline-primary me-1">Edit</a>
+
+                                                <!-- Delete Button -->
+                                                <form method="POST" action="{% url 'delete_benefit' request.pk %}" class="d-inline" onsubmit="return confirm('Are you sure you want to delete this request?');">
+                                                    {% csrf_token %}
+                                                    <button type="submit" class="btn btn-sm btn-outline-danger">Delete</button>
+                                                </form>
+                                                {% else %}
+                                                <span class="text-muted">- - -</span>
+                                                {% endif %}
+                                            </td>
+
+
+                                        </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    {% else %}
+                        <p class="text-muted text-center">You have no upcoming benefit requests.</p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+
 
 </div>
 

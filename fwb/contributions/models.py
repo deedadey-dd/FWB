@@ -1,4 +1,5 @@
 from django.core.exceptions import ValidationError
+from django.core.validators import MinValueValidator
 from django.db import models
 from django.utils.timezone import now
 from django.contrib.auth import get_user_model
@@ -153,37 +154,55 @@ class BenefitRequest(models.Model):
             ("other", "Other"),
         ],
     )
-    event_date = models.DateField()  # Date of the event (past or future)
-    reason = models.TextField(blank=True, null=True)  # Required only for "Other"
-    amount_requested = models.DecimalField(max_digits=10, decimal_places=2)
-    status = models.CharField(
-        max_length=10, choices=BenefitRequestStatus.choices, default=BenefitRequestStatus.PENDING
+    event_date = models.DateField()
+    reason = models.TextField(blank=True, null=True)
+    amount_requested = models.DecimalField(
+        max_digits=10,
+        decimal_places=2,
+        null=True,
+        blank=True
     )
-    reviewed_by = models.ForeignKey(User, null=True, blank=True, on_delete=models.SET_NULL,
-                                    related_name="benefit_reviews")
+    status = models.CharField(
+        max_length=10,
+        choices=BenefitRequestStatus.choices,
+        default=BenefitRequestStatus.PENDING
+    )
+    reviewed_by = models.ForeignKey(
+        User,
+        null=True,
+        blank=True,
+        on_delete=models.SET_NULL,
+        related_name="benefit_reviews"
+    )
     reviewed_at = models.DateTimeField(null=True, blank=True)
     requested_at = models.DateTimeField(auto_now_add=True)
+    fulfilled = models.BooleanField(default=False)
 
     def clean(self):
-        if self.amount_requested is None:
-            raise ValidationError({"amount_requested": "This field is required."})
+        if self.fulfilled and self.status != "Accepted":
+            raise ValidationError("Only accepted requests can be marked as fulfilled")
 
-        # Ensure amount_requested is treated as a Decimal
-        amount = Decimal(str(self.amount_requested))
+        if self.benefit_type == "other":
+            if not self.amount_requested:
+                raise ValidationError({"amount_requested": "Amount is required for 'Other' benefit type."})
+            if Decimal(str(self.amount_requested)) <= Decimal("0"):
+                raise ValidationError({"amount_requested": "Amount must be greater than zero."})
+            if not self.reason:
+                raise ValidationError({"reason": "Reason is required for 'Other' benefit type."})
+        else:
+            self.amount_requested = None
+            self.reason = None
 
-        if amount <= Decimal("0"):
-            raise ValidationError({"amount_requested": "The requested amount must be greater than zero."})
+    @property
+    def display_status(self):
+        if self.status == "Denied":
+            return "Denied"
+        return "Fulfilled" if self.fulfilled else self.status
 
-        if self.benefit_type == "other" and not self.reason:
-            raise ValidationError({"reason": "Reason is required when selecting 'Other' benefit type."})
 
     def save(self, *args, **kwargs):
         self.clean()
         super().save(*args, **kwargs)
-
-    def __str__(self):
-        return f"{self.user.username} requested {self.benefit_type} - {self.amount_requested}"
-
 
 # EXPENSES
 

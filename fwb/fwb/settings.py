@@ -41,6 +41,7 @@ INSTALLED_APPS = [
     'phonenumber_field',
     "crispy_forms",
     "crispy_bootstrap5",
+    "widget_tweaks",
     'users',
     'contributions',
     'django.contrib.admin',

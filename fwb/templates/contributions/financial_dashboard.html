@@ -1,0 +1,179 @@
+{% extends "base.html" %}
+{% load custom_filters %}
+
+{% block title %}Financial Dashboard{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2><i class="bi bi-graph-up me-2"></i>
+            {% if selected_year == 'all' %}
+                All-Time Financial Dashboard
+            {% else %}
+                Financial Dashboard for {{ selected_year }}
+            {% endif %}
+        </h2>
+
+        <div class="btn-group">
+            <div class="dropdown">
+                <button class="btn btn-outline-primary dropdown-toggle" type="button"
+                        data-bs-toggle="dropdown" aria-expanded="false">
+                    {% if selected_year == 'all' %}
+                        All Time
+                    {% else %}
+                        Year: {{ selected_year }}
+                    {% endif %}
+                </button>
+                <ul class="dropdown-menu">
+                    <li><a class="dropdown-item {% if selected_year == 'all' %}active{% endif %}"
+                          href="{% url 'financial_dashboard_all' %}">All Time</a></li>
+                    <li><hr class="dropdown-divider"></li>
+                    {% for year in available_years %}
+                        <li><a class="dropdown-item {% if selected_year == year|stringformat:"s" %}active{% endif %}"
+                              href="?year={{ year }}">{{ year }}</a></li>
+                    {% endfor %}
+                </ul>
+            </div>
+
+            <a href="{% url 'expenses_dashboard' %}" class="btn btn-outline-secondary ms-2">
+                <i class="bi bi-cash-stack"></i> View Expenses
+            </a>
+        </div>
+    </div>
+
+    <!-- Summary Cards -->
+    <div class="row mb-4">
+        <div class="col-md-4">
+            <div class="card border-success">
+                <div class="card-body">
+                    <h5 class="card-title text-success">Total Benefits</h5>
+                    <h2 class="mb-0">${{ total_benefits|floatformat:2 }}</h2>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card border-danger">
+                <div class="card-body">
+                    <h5 class="card-title text-danger">Total Expenses</h5>
+                    <h2 class="mb-0">${{ total_expenses|floatformat:2 }}</h2>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card {% if net_balance >= 0 %}border-primary{% else %}border-warning{% endif %}">
+                <div class="card-body">
+                    <h5 class="card-title {% if net_balance >= 0 %}text-primary{% else %}text-warning{% endif %}">
+                        Net Balance
+                    </h5>
+                    <h2 class="mb-0">${{ net_balance|floatformat:2 }}</h2>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Recent Transactions -->
+    <div class="row">
+        <div class="col-md-6">
+            <div class="card shadow-sm mb-4">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0"><i class="bi bi-gift"></i> Recent Benefits</h5>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead>
+                                <tr>
+                                    <th>Date</th>
+                                    <th>Recipient</th>
+                                    <th>Type</th>
+                                    <th>Amount</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for benefit in benefits %}
+                                <tr>
+                                    <td>{{ benefit.date_awarded|date:"M d" }}</td>
+                                    <td>{{ benefit.user.get_full_name|truncatechars:15 }}</td>
+                                    <td>{{ benefit.get_benefit_type_display }}</td>
+                                    <td class="text-success">${{ benefit.amount_awarded|floatformat:2 }}</td>
+                                </tr>
+                                {% empty %}
+                                <tr>
+                                    <td colspan="4" class="text-center">No benefits recorded</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-6">
+            <div class="card shadow-sm mb-4">
+                <div class="card-header bg-danger text-white">
+                    <h5 class="mb-0"><i class="bi bi-cash-stack"></i> Recent Expenses</h5>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead>
+                                <tr>
+                                    <th>Date</th>
+                                    <th>Description</th>
+                                    <th>Category</th>
+                                    <th>Amount</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for expense in expenses %}
+                                <tr>
+                                    <td>{{ expense.date|date:"M d" }}</td>
+                                    <td>{{ expense.description|truncatechars:20 }}</td>
+                                    <td>{{ expense.get_category_display }}</td>
+                                    <td class="text-danger">${{ expense.amount|floatformat:2 }}</td>
+                                </tr>
+                                {% empty %}
+                                <tr>
+                                    <td colspan="4" class="text-center">No expenses recorded</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Expense Breakdown -->
+    <div class="card shadow-sm">
+        <div class="card-header bg-info text-white">
+            <h5 class="mb-0"><i class="bi bi-pie-chart"></i> Monthly Expense Breakdown</h5>
+        </div>
+        <div class="card-body">
+            <div class="row">
+                {% for item in monthly_expenses %}
+                <div class="col-md-4 mb-3">
+                    <div class="card">
+                        <div class="card-body">
+                            <h6 class="card-subtitle mb-2 text-muted">{{ item.category }}</h6>
+                            <h5 class="card-title">${{ item.total|floatformat:2 }}</h5>
+                            <div class="progress">
+                                <div class="progress-bar" role="progressbar"
+                                     style="width: {{ item.total|div:total_expenses|mul:100 }}%">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                {% empty %}
+                <div class="col-12 text-center py-3">
+                    No expense data for this month
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

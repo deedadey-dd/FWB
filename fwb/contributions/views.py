@@ -6,13 +6,12 @@ from django.contrib.auth.decorators import login_required, user_passes_test
 from django.core.mail import send_mail, get_connection
 from django.utils.timezone import now
 from django.views.decorators.http import require_POST
-
 from .models import Contribution, ContributionSetting, ContributionRecord, ExtraContribution, WelfareBenefit, Expense, \
     BenefitRequest, BenefitRequestStatus, ExpenseCategory
 from .forms import ContributionForm, BenefitRequestForm, BenefitReviewForm
 from .utils import allocate_contribution
 from django.db.models.functions import ExtractYear, ExtractMonth
-from django.db.models import Sum, Q
+from django.db.models import Sum, Q, Count
 from datetime import datetime, date
 from users.models import CustomUser
 from collections import defaultdict
@@ -22,6 +21,8 @@ from django.core.paginator import Paginator
 from openpyxl import Workbook
 from django.http import JsonResponse
 from decimal import Decimal
+from django.utils import timezone
+from datetime import timedelta
 
 
 STATUS_OPTIONS = [
@@ -824,3 +825,204 @@ def benefit_request_detail(request, pk):
         'welfare_benefit': welfare_benefit,
     }
     return render(request, 'contributions/benefit_detail.html', context)
+
+
+# ACCOUNTING
+
+# Financial Dashboard View
+# @login_required
+# def financial_dashboard(request):
+#     # Time periods
+#     today = timezone.now().date()
+#     month_start = today.replace(day=1)
+#     year_start = today.replace(month=1, day=1)
+#
+#     # Benefits data
+#     benefits = WelfareBenefit.objects.all().order_by('-date_awarded')[:10]
+#     total_benefits = WelfareBenefit.objects.aggregate(total=Sum('amount_awarded'))['total'] or Decimal('0')
+#
+#     # Expenses data
+#     expenses = Expense.objects.all().order_by('-date')[:10]
+#     total_expenses = Expense.objects.aggregate(total=Sum('amount'))['total'] or Decimal('0')
+#
+#     # Monthly breakdown
+#     monthly_expenses = Expense.objects.filter(
+#         date__gte=month_start
+#     ).values('category').annotate(
+#         total=Sum('amount')
+#     ).order_by('-total')
+#
+#     # Net balance calculation
+#     net_balance = total_benefits - total_expenses
+#
+#     context = {
+#         'today': today,
+#         'month_start': month_start,
+#         'year_start': year_start,
+#         'benefits': benefits,
+#         'total_benefits': total_benefits,
+#         'expenses': expenses,
+#         'total_expenses': total_expenses,
+#         'monthly_expenses': monthly_expenses,
+#         'net_balance': net_balance,
+#     }
+#     return render(request, 'contributions/financial_dashboard.html', context)
+
+
+from django.db.models import Sum, Count
+from django.utils import timezone
+from datetime import datetime
+from decimal import Decimal
+
+
+def financial_dashboard(request):
+    # Determine if we're viewing all time or a specific year
+    if request.path.endswith('/all/'):
+        selected_year = 'all'
+    else:
+        selected_year = request.GET.get('year', str(timezone.now().year))
+
+    # Get all available years with data (separate queries)
+    benefit_years = WelfareBenefit.objects.dates('date_awarded', 'year')
+    expense_years = Expense.objects.dates('date', 'year')
+
+    # Combine and deduplicate years
+    all_years = set()
+    for year in benefit_years:
+        all_years.add(year.year)
+    for year in expense_years:
+        all_years.add(year.year)
+
+    available_years = sorted(all_years, reverse=True)
+
+    # Prepare base querysets
+    benefits = WelfareBenefit.objects.all()
+    expenses = Expense.objects.all()
+
+    # Filter if not viewing all time
+    if selected_year != 'all':
+        year_start = datetime(int(selected_year), 1, 1)
+        year_end = datetime(int(selected_year), 12, 31)
+        benefits = benefits.filter(date_awarded__range=(year_start, year_end))
+        expenses = expenses.filter(date__range=(year_start, year_end))
+
+    # Calculate totals
+    total_benefits = benefits.aggregate(total=Sum('amount_awarded'))['total'] or Decimal('0')
+    total_expenses = expenses.aggregate(total=Sum('amount'))['total'] or Decimal('0')
+    net_balance = total_benefits - total_expenses
+
+    # Get recent transactions
+    recent_benefits = benefits.order_by('-date_awarded')[:10]
+    recent_expenses = expenses.order_by('-date')[:10]
+
+    # Monthly expense breakdown
+    monthly_expenses = expenses.values('category').annotate(
+        total=Sum('amount')
+    ).order_by('-total')
+
+    context = {
+        'selected_year': selected_year,
+        'available_years': available_years,
+        'total_benefits': total_benefits,
+        'total_expenses': total_expenses,
+        'net_balance': net_balance,
+        'benefits': recent_benefits,
+        'expenses': recent_expenses,
+        'monthly_expenses': monthly_expenses,
+    }
+    return render(request, 'contributions/financial_dashboard.html', context)
+
+
+# Expenses Dashboard View
+# @login_required
+# def expenses_dashboard(request):
+#     # Filters
+#     category_filter = request.GET.get('category', 'all')
+#     date_from = request.GET.get('date_from')
+#     date_to = request.GET.get('date_to')
+#
+#     # Base query
+#     expenses = Expense.objects.all().order_by('-date')
+#
+#     # Apply filters
+#     if category_filter != 'all':
+#         expenses = expenses.filter(category=category_filter)
+#
+#     if date_from:
+#         expenses = expenses.filter(date__gte=date_from)
+#
+#     if date_to:
+#         expenses = expenses.filter(date__lte=date_to)
+#
+#     # Summary data
+#     total_expenses = expenses.aggregate(total=Sum('amount'))['total'] or Decimal('0')
+#     category_summary = Expense.objects.values('category').annotate(
+#         total=Sum('amount'),
+#         count=Count('id')
+#     ).order_by('-total')
+#
+#     context = {
+#         'expenses': expenses,
+#         'total_expenses': total_expenses,
+#         'category_summary': category_summary,
+#         'category_choices': ExpenseCategory.choices,
+#         'current_category': category_filter,
+#         'date_from': date_from,
+#         'date_to': date_to,
+#     }
+#     return render(request, 'contributions/expenses_dashboard.html', context)
+
+
+def expenses_dashboard(request):
+    # Determine time period
+    if request.path.endswith('/all/'):
+        selected_year = 'all'
+    else:
+        selected_year = request.GET.get('year', str(timezone.now().year))
+
+    # Get available years
+    expense_years = Expense.objects.dates('date', 'year')
+    available_years = sorted({d.year for d in expense_years}, reverse=True)
+
+    # Base query
+    expenses = Expense.objects.all()
+
+    # Apply year filter if not viewing all time
+    if selected_year != 'all':
+        year_start = datetime(int(selected_year), 1, 1)
+        year_end = datetime(int(selected_year), 12, 31)
+        expenses = expenses.filter(date__range=(year_start, year_end))
+
+    # Apply other filters
+    category_filter = request.GET.get('category', 'all')
+    date_from = request.GET.get('date_from')
+    date_to = request.GET.get('date_to')
+
+    if category_filter != 'all':
+        expenses = expenses.filter(category=category_filter)
+
+    if date_from:
+        expenses = expenses.filter(date__gte=date_from)
+
+    if date_to:
+        expenses = expenses.filter(date__lte=date_to)
+
+    # Summary data
+    total_expenses = expenses.aggregate(total=Sum('amount'))['total'] or Decimal('0')
+    category_summary = expenses.values('category').annotate(
+        total=Sum('amount'),
+        count=Count('id')
+    ).order_by('-total')
+
+    context = {
+        'selected_year': selected_year,
+        'available_years': available_years,
+        'expenses': expenses,
+        'total_expenses': total_expenses,
+        'category_summary': category_summary,
+        'category_choices': ExpenseCategory.choices,
+        'current_category': category_filter,
+        'date_from': date_from,
+        'date_to': date_to,
+    }
+    return render(request, 'contributions/expenses_dashboard.html', context)

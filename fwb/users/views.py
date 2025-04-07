@@ -1,5 +1,5 @@
 from django.contrib.auth import authenticate, login, logout, update_session_auth_hash, get_backends
-from django.contrib.auth.decorators import login_required
+from django.contrib.auth.decorators import login_required, user_passes_test
 from django.shortcuts import render, redirect
 from django.contrib import messages
 from django.template.context_processors import request
@@ -7,13 +7,26 @@ from django.template.context_processors import request
 from .forms import CustomUserCreationForm, CustomUserUpdateForm, ContactForm, ChildForm, LoginForm, UserProfileForm
 from django.contrib.auth.forms import PasswordChangeForm
 
+from contributions.models import BenefitRequest
+
 
 def home(request):
     if request.user.is_authenticated:
         if request.user.is_staff:
-            return redirect('record_contribution')
+            return redirect('staff_dashboard')
         return redirect('dashboard')
     return redirect('login')
+
+
+@login_required
+@user_passes_test(lambda u: u.is_staff)
+def staff_dashboard(request):
+    # Add any context data you want to display (like stats)
+    context = {
+        'pending_requests': BenefitRequest.objects.filter(status='Pending').count(),
+        # Add other stats as needed
+    }
+    return render(request, 'users/staff_dashboard.html', context)
 
 
 def register(request):
@@ -84,7 +97,7 @@ def user_login(request):
                 login(request, user)
                 messages.success(request, 'Login successful')
                 if user.is_staff:
-                    return redirect('record_contribution')
+                    return redirect('staff_dashboard')
                 return redirect('dashboard')
             else:
                 messages.error(request, 'Invalid login credentials. Please try again.')

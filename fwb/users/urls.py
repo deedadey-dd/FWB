@@ -1,6 +1,7 @@
 from django.urls import path
 from django.contrib.auth import views as auth_views
-from .views import register, update_profile, add_child, add_contact, user_login, user_logout, profile, change_password, home
+from .views import register, update_profile, add_child, add_contact, user_login, user_logout, profile, change_password, \
+    home, staff_dashboard
 
 urlpatterns = [
     path('', home, name='home'),
@@ -21,4 +22,5 @@ urlpatterns = [
         template_name="users/password_reset_confirm.html"), name="password_reset_confirm"),
     path("reset/done/", auth_views.PasswordResetCompleteView.as_view(
         template_name="users/password_reset_complete.html"), name="password_reset_complete"),
+    path('staff-dashboard/', staff_dashboard, name='staff_dashboard'),
 ]

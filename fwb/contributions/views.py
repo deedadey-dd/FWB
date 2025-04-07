@@ -492,7 +492,6 @@ def send_reminder_message(request):
         return redirect("manager_dashboard")
 
 
-
 @login_required
 @user_passes_test(lambda u: u.is_staff)
 def extra_contributions_view(request):
@@ -867,12 +866,6 @@ def benefit_request_detail(request, pk):
 #         'net_balance': net_balance,
 #     }
 #     return render(request, 'contributions/financial_dashboard.html', context)
-
-
-from django.db.models import Sum, Count
-from django.utils import timezone
-from datetime import datetime
-from decimal import Decimal
 
 
 def financial_dashboard(request):

@@ -78,10 +78,6 @@ def record_contribution(request):
                             reason=reason
                         )
 
-                # testing the email setup
-                print(settings.DEFAULT_FROM_EMAIL)
-                print(contribution.user.email)
-
 
                 # Send notification email
                 send_mail(
@@ -484,8 +480,17 @@ def send_reminder_message(request):
 
         for user in users:
             months_defaulted = int(request.POST.get(f"months_defaulted_{user.id}", 0))
-            message_text = f"Dear {user.first_name}, This is an automated message on your status. You are defaulting by {months_defaulted} months; Kindly make your contributions to come up to date. Thank you."
+            message_text = (f"Dear {user.first_name}, This is an automated message on your status.\n"
+                            f"You are defaulting by {months_defaulted} months; Kindly make your contributions to "
+                            f"come up to date. Thank you.")
             # Send message (e.g., email or SMS logic here)
+            send_mail(
+                subject='FWB Reminder',
+                message=message_text,
+                from_email=settings.DEFAULT_FROM_EMAIL,
+                recipient_list=[user.email],
+                fail_silently=True
+            )
             print(f"Sending to {user.email}: {message_text}")  # Replace with actual sending logic
 
         messages.success(request, "Reminder messages sent successfully!")

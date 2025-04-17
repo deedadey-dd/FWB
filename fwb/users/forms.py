@@ -73,3 +73,12 @@ class UserProfileForm(forms.ModelForm):
             "email": forms.EmailInput(attrs={"class": "form-control"}),
             "phone_number": forms.TextInput(attrs={"class": "form-control"}),
         }
+
+
+class ProfileCompletionForm(forms.ModelForm):
+    class Meta:
+        model = CustomUser
+        fields = ['residence', 'date_of_birth', 'next_of_kin', 'hometown']
+        widgets = {
+            'date_of_birth': forms.DateInput(attrs={'type': 'date'})
+        }

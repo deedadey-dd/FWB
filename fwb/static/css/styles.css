@@ -23,3 +23,10 @@
     margin-bottom: 0.5rem;
     font-size: 2rem;
 }
+
+.btn-danger {
+    transition: all 0.2s;
+}
+.btn-danger:hover {
+    transform: scale(1.1);
+}

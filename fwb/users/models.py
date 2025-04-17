@@ -11,6 +11,19 @@ class CustomUser(AbstractUser):
     date_of_birth = models.DateField(null=True, blank=True)
     next_of_kin = models.CharField(max_length=100, null=True, blank=True)
     hometown = models.CharField(max_length=100, null=True, blank=True)
+    profile_complete = models.BooleanField(default=False)
+
+    def check_profile_completion(self):
+        required_fields = [
+            self.residence,
+            self.date_of_birth,
+            self.next_of_kin,
+            self.hometown,
+            self.contacts.exists()  # At least one contact
+        ]
+        self.profile_complete = all(required_fields)
+        self.save()
+        return self.profile_complete
 
     def __str__(self):
         other_names_display = self.other_names or ""

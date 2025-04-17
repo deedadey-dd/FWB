@@ -1,13 +1,16 @@
 from django.contrib.auth import authenticate, login, logout, update_session_auth_hash, get_backends
 from django.contrib.auth.decorators import login_required, user_passes_test
-from django.shortcuts import render, redirect
+from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib import messages
 from django.template.context_processors import request
 
-from .forms import CustomUserCreationForm, CustomUserUpdateForm, ContactForm, ChildForm, LoginForm, UserProfileForm
+from .forms import CustomUserCreationForm, CustomUserUpdateForm, ContactForm, ChildForm, LoginForm, UserProfileForm, \
+    ProfileCompletionForm
 from django.contrib.auth.forms import PasswordChangeForm
 
 from contributions.models import BenefitRequest
+
+from .models import Contact
 
 
 def home(request):
@@ -34,6 +37,7 @@ def register(request):
         form = CustomUserCreationForm(request.POST)
         if form.is_valid():
             user = form.save()
+            user.check_profile_completion()
 
             backend = get_backends()[0]
             user.backend = f'{backend.__module__}.{backend.__class__.__name__}'
@@ -57,18 +61,18 @@ def update_profile(request):
     return render(request, 'users/update_profile.html', {'form': form})
 
 
-@login_required
-def add_contact(request):
-    if request.method == "POST":
-        form = ContactForm(request.POST)
-        if form.is_valid():
-            contact = form.save(commit=False)
-            contact.user = request.user
-            contact.save()
-            return redirect("dashboard")
-    else:
-        form = ContactForm()
-    return render(request, "users/add_contact.html", {"form": form})
+# @login_required
+# def add_contact(request):
+#     if request.method == "POST":
+#         form = ContactForm(request.POST)
+#         if form.is_valid():
+#             contact = form.save(commit=False)
+#             contact.user = request.user
+#             contact.save()
+#             return redirect("profile")
+#     else:
+#         form = ContactForm()
+#     return render(request, "users/add_contact.html", {"form": form})
 
 
 @login_required
@@ -120,16 +124,57 @@ def dashboard(request):
 
 @login_required
 def profile(request):
-    if request.method == "POST":
-        form = UserProfileForm(request.POST, instance=request.user)
-        if form.is_valid():
-            form.save()
-            messages.success(request, "Profile updated successfully!")
-            return redirect("profile")
-    else:
-        form = UserProfileForm(instance=request.user)
+    if request.method == 'POST':
+        if 'update_profile' in request.POST:
+            user_form = ProfileCompletionForm(request.POST, instance=request.user)
+            if user_form.is_valid():
+                user = user_form.save()
+                user.check_profile_completion()
+                messages.success(request, "Profile updated successfully!")
+                return redirect('profile')
 
-    return render(request, "users/profile.html", {"form": form})
+        elif 'add_contact' in request.POST:
+            contact_form = ContactForm(request.POST)
+            if contact_form.is_valid():
+                name = contact_form.cleaned_data.get("name")
+                phone = contact_form.cleaned_data.get("phone")
+
+                # Prevent duplicate contacts
+                if request.user.contacts.filter(name=name, phone_number=phone).exists():
+                    messages.warning(request, "This contact already exists.")
+                    return redirect('profile')
+                else:
+                    contact = contact_form.save(commit=False)
+                    contact.user = request.user
+                    contact.save()
+                    print('saved')
+                    request.user.check_profile_completion()
+                    messages.success(request, "Contact added successfully!")
+
+            return redirect('profile')
+
+    user_form = ProfileCompletionForm(instance=request.user)
+    contact_form = ContactForm()
+
+    context = {
+        'user_form': user_form,
+        'contact_form': contact_form,
+        'profile_complete': request.user.profile_complete,
+        'contacts': request.user.contacts.all()
+    }
+    return render(request, 'users/profile.html', context)
+
+
+@login_required
+def delete_contact(request, pk):
+    try:
+        contact = Contact.objects.get(pk=pk, user=request.user)
+        contact.delete()
+        request.user.check_profile_completion()
+        messages.success(request, "Contact deleted successfully!")
+    except Contact.DoesNotExist:
+        messages.error(request, "Contact not found or you don't have permission to delete it.")
+    return redirect('profile')
 
 
 @login_required

@@ -1,0 +1,118 @@
+{% extends "base.html" %}
+{% load crispy_forms_tags %}
+
+{% block title %}Review Benefit Requests{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <h2>Review Benefit Requests</h2>
+
+    {% if messages %}
+        <div class="alert alert-success">
+            {% for message in messages %}
+                {{ message }}
+            {% endfor %}
+        </div>
+    {% endif %}
+
+    <table class="table table-striped">
+        <thead>
+            <tr>
+                <th>Requested</th>
+                <th>Name</th>
+                <th>Type</th>
+                <th>Event Date</th>
+                <th>Reason</th>
+                <th>Amount</th>
+                <th>Status</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for request in requests %}
+                <tr>
+                    <td>{{ request.requested_at }}</td>
+                    <td>{{ request.user }}</td>
+                    <td>{{ request.get_benefit_type_display }}</td>
+                    <td>{{ request.event_date }}</td>
+                    <td>{{ request.reason|default:"N/A" }}</td>
+                    <td>
+                        <form method="POST" action="{% url 'review_benefit_requests' %}" class="d-inline">
+                            {% csrf_token %}
+                            <input type="hidden" name="request_id" value="{{ request.id }}">
+                            <input type="number" name="amount_requested" class="form-control form-control-sm"
+                                   value="{{ request.amount_requested }}" min="0" step="0.01">
+                    </td>
+                    <td>
+                        <select name="status" class="form-select form-select-sm" onchange="this.form.submit()">
+                            <option value="Pending" {% if request.status == "Pending" %}selected{% endif %}>Pending</option>
+                            <option value="Accepted" {% if request.status == "Accepted" %}selected{% endif %}>Accepted</option>
+                            <option value="Denied" {% if request.status == "Denied" %}selected{% endif %}>Denied</option>
+                        </select>
+                    </td>
+                    <td>
+                            <button type="submit" class="btn btn-success btn-sm">Save</button>
+                        </form>
+
+                        <!-- Fulfill Button (only for accepted requests) -->
+                        {% if request.status == "Accepted" %}
+                        <button type="button" class="btn btn-primary btn-sm mt-1"
+                                data-bs-toggle="modal" data-bs-target="#fulfillModal{{ request.id }}">
+                            Fulfill
+                        </button>
+                        {% endif %}
+                    </td>
+                </tr>
+
+                <!-- Fulfillment Modal -->
+                <div class="modal fade" id="fulfillModal{{ request.id }}" tabindex="-1" aria-hidden="true">
+                    <div class="modal-dialog">
+                        <div class="modal-content">
+                            <div class="modal-header">
+                                <h5 class="modal-title">Fulfill Benefit Request</h5>
+                                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                            </div>
+                            <form method="POST" action="{% url 'fulfill_benefit_request' request.id %}">
+                                {% csrf_token %}
+                                <input type="hidden" name="request_id" value="{{ request.id }}">
+
+                                <div class="modal-body">
+                                    <div class="mb-3">
+                                        <label class="form-label">Amount Awarded</label>
+                                        <input type="number" class="form-control" name="amount_awarded"
+                                               value="{{ request.amount_requested }}" step="0.01" min="0.01" required>
+                                    </div>
+
+                                    <div class="mb-3">
+                                        <label class="form-label">Extra Costs</label>
+                                        <input type="number" class="form-control" name="extra_costs"
+                                               value="0.00" step="0.01" min="0">
+                                        <small class="text-muted">Transportation, logistics, etc.</small>
+                                    </div>
+
+                                    <div class="mb-3">
+                                        <label class="form-label">Expense Notes</label>
+                                        <textarea class="form-control" name="expense_notes" rows="3">
+{{ request.get_benefit_type_display }} Benefit for {{ request.user }}
+{% if request.reason %}Reason: {{ request.reason }}{% endif %}
+                                        </textarea>
+                                    </div>
+                                </div>
+
+                                <div class="modal-footer">
+                                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                                    <button type="submit" class="btn btn-primary">Record Fulfillment</button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            {% empty %}
+                <tr>
+                    <td colspan="8" class="text-center">No pending requests.</td>
+                </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endblock %}

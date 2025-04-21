@@ -1,0 +1,216 @@
+{% extends "base.html" %}
+
+{% block title %}Staff Dashboard{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-5">
+    <div class="text-center mb-5">
+        <h1 class="display-4"><i class="bi bi-speedometer2"></i> Staff Dashboard</h1>
+        <p class="lead">Manage all aspects of the welfare system</p>
+    </div>
+
+    <div class="row g-4">
+        <!-- Contributions Section -->
+        <div class="col-md-6 col-lg-4">
+            <div class="card border-primary h-100">
+                <div class="card-header bg-primary text-white">
+                    <h3 class="h5 mb-0"><i class="bi bi-cash-coin"></i> Contributions</h3>
+                </div>
+                <div class="card-body d-flex flex-column">
+                    <a href="{% url 'record_contribution' %}" class="btn btn-lg btn-outline-primary mb-3 py-3">
+                        <i class="bi bi-plus-circle fs-2"></i><br>
+                        New Contribution
+                    </a>
+                    <a href="{% url 'view_contributions' %}" class="btn btn-lg btn-outline-secondary py-3">
+                        <i class="bi bi-list-ul fs-2"></i><br>
+                        View All Contributions
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <!-- Benefits Section -->
+        <div class="col-md-6 col-lg-4">
+            <div class="card border-success h-100">
+                <div class="card-header bg-success text-white">
+                    <h3 class="h5 mb-0"><i class="bi bi-gift"></i> Benefits</h3>
+                </div>
+                <div class="card-body d-flex flex-column">
+                    <a href="{% url 'review_benefit_requests' %}" class="btn btn-lg btn-outline-success mb-3 py-3">
+                        <i class="bi bi-clipboard-check fs-2"></i><br>
+                        Review Requests
+                    </a>
+                    <div class="btn-group d-flex">
+                        <a href="{% url 'all_benefit_requests' %}" class="btn btn-lg btn-outline-secondary py-3 flex-grow-1">
+                            <i class="bi bi-list-check fs-2"></i><br>
+                            All Benefits
+                        </a>
+                        <a href="{% url 'financial_dashboard' %}" class="btn btn-lg btn-outline-info py-3 flex-grow-1">
+                            <i class="bi bi-graph-up fs-2"></i><br>
+                            Finances
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Financial Management -->
+        <div class="col-md-6 col-lg-4">
+            <div class="card border-danger h-100">
+                <div class="card-header bg-danger text-white">
+                    <h3 class="h5 mb-0"><i class="bi bi-calculator"></i> Accounting</h3>
+                </div>
+                <div class="card-body d-flex flex-column">
+                    <a href="{% url 'expenses_dashboard' %}" class="btn btn-lg btn-outline-danger mb-3 py-3">
+                        <i class="bi bi-cash-stack fs-2"></i><br>
+                        Expenses
+                    </a>
+                    <div class="btn-group d-flex">
+                        <a href="{% url 'review_benefit_requests' %}" class="btn btn-lg btn-outline-secondary py-3 flex-grow-1">
+                            <i class="bi bi-plus-circle fs-2"></i><br>
+                            Review Requests
+                        </a>
+                        <a href="{% url 'financial_dashboard_all' %}" class="btn btn-lg btn-outline-warning py-3 flex-grow-1">
+                            <i class="bi bi-file-earmark-bar-graph fs-2"></i><br>
+                            Finances
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Member Management -->
+        <div class="col-md-6 col-lg-4">
+            <div class="card border-info h-100">
+                <div class="card-header bg-info text-white">
+                    <h3 class="h5 mb-0"><i class="bi bi-people"></i> Members</h3>
+                </div>
+                <div class="card-body d-flex flex-column">
+                    <a href="{% url 'register' %}" class="btn btn-lg btn-outline-info mb-3 py-3">
+                        <i class="bi bi-person-plus fs-2"></i><br>
+                        Register Member
+                    </a>
+                    <a href="{% url 'register' %}" class="btn btn-lg btn-outline-secondary py-3">
+                        <i class="bi bi-card-list fs-2"></i><br>
+                        Member Directory
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <!-- System Management -->
+        <div class="col-md-6 col-lg-4">
+            <div class="card border-warning h-100">
+                <div class="card-header bg-warning text-dark">
+                    <h3 class="h5 mb-0"><i class="bi bi-gear"></i> Administration</h3>
+                </div>
+                <div class="card-body d-flex flex-column">
+                    <a href="{% url 'home' %}" class="btn btn-lg btn-outline-warning mb-3 py-3">
+                        <i class="bi bi-sliders fs-2"></i><br>
+                        System Settings
+                    </a>
+                    <div class="btn-group d-flex">
+                        <a href="{% url 'home' %}" class="btn btn-lg btn-outline-secondary py-3 flex-grow-1">
+                            <i class="bi bi-journal-bookmark fs-2"></i><br>
+                            Audit Logs
+                        </a>
+                        <a href="{% url 'home' %}" class="btn btn-lg btn-outline-dark py-3 flex-grow-1">
+                            <i class="bi bi-shield-lock fs-2"></i><br>
+                            User Accounts
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Quick Actions -->
+        <div class="col-md-6 col-lg-4">
+            <div class="card border-secondary h-100">
+                <div class="card-header bg-secondary text-white">
+                    <h3 class="h5 mb-0"><i class="bi bi-lightning"></i> Quick Actions</h3>
+                </div>
+                <div class="card-body d-flex flex-column">
+                    <a href="{% url 'manager_dashboard' %}" class="btn btn-lg btn-outline-dark mb-3 py-3">
+                        <i class="bi bi-check2-all fs-2"></i><br>
+                        Pending Approvals
+                    </a>
+                    <div class="btn-group d-flex">
+                        <a href="{% url 'manager_dashboard' %}" class="btn btn-lg btn-outline-secondary py-3 flex-grow-1">
+                            <i class="bi bi-receipt fs-2"></i><br>
+                            Generate Statement
+                        </a>
+                        <a href="{% url 'send_reminder_message' %}" class="btn btn-lg btn-outline-primary py-3 flex-grow-1">
+                            <i class="bi bi-bell fs-2"></i><br>
+                            Send Notices
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Stats Overview -->
+    <div class="row mt-5">
+        <div class="col-12">
+            <div class="card shadow-sm">
+                <div class="card-header bg-light">
+                    <h3 class="h5 mb-0"><i class="bi bi-clipboard-data"></i> Quick Stats</h3>
+                </div>
+                <div class="card-body">
+                    <div class="row text-center">
+                        <div class="col-md-3 mb-3">
+                            <div class="card">
+                                <div class="card-body">
+                                    <h6 class="text-muted">Pending Requests</h6>
+                                    <h3 class="text-primary">12</h3>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-3 mb-3">
+                            <div class="card">
+                                <div class="card-body">
+                                    <h6 class="text-muted">This Month's Contributions</h6>
+                                    <h3 class="text-success">$8,450.00</h3>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-3 mb-3">
+                            <div class="card">
+                                <div class="card-body">
+                                    <h6 class="text-muted">Unpaid Benefits</h6>
+                                    <h3 class="text-warning">3</h3>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-3 mb-3">
+                            <div class="card">
+                                <div class="card-body">
+                                    <h6 class="text-muted">System Alerts</h6>
+                                    <h3 class="text-danger">2</h3>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .btn-lg {
+        transition: all 0.3s ease;
+    }
+    .btn-lg:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+    }
+    .card {
+        transition: all 0.3s ease;
+    }
+    .card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 10px 20px rgba(0,0,0,0.1);
+    }
+</style>
+{% endblock %}

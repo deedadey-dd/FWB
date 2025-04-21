@@ -1,0 +1,106 @@
+{% extends "base.html" %}
+
+{% block title %}Request a Benefit{% endblock %}
+
+{% block content %}
+
+{% load widget_tweaks %}
+
+<div class="container mt-5">
+    <div class="row justify-content-center">
+        <div class="col-md-8 col-lg-6">
+            <div class="card shadow-sm">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0">Request a Benefit</h5>
+                </div>
+                <div class="card-body">
+
+                    {% if messages %}
+                        {% for message in messages %}
+                            <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+                                {{ message }}
+                                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                            </div>
+                        {% endfor %}
+                    {% endif %}
+
+                    <form method="POST" novalidate>
+                        {% csrf_token %}
+
+                        <!-- Benefit Type -->
+                        <div class="mb-3">
+                            <label for="id_benefit_type" class="form-label">Benefit Type</label>
+                            {{ form.benefit_type|add_class:"form-select" }}
+                            {% if form.benefit_type.errors %}
+                                <div class="invalid-feedback d-block">
+                                    {{ form.benefit_type.errors.0 }}
+                                </div>
+                            {% endif %}
+                        </div>
+
+                        <!-- Event Date -->
+                        <div class="mb-3">
+                            <label for="id_event_date" class="form-label">Event Date</label>
+                            {{ form.event_date|add_class:"form-control" }}
+                            {% if form.event_date.errors %}
+                                <div class="invalid-feedback d-block">
+                                    {{ form.event_date.errors.0 }}
+                                </div>
+                            {% endif %}
+                        </div>
+
+                        <!-- Reason (only for 'Other') -->
+                        <div class="mb-3" id="reason_container" style="display: none;">
+                            <label for="id_reason" class="form-label">Reason</label>
+                            {{ form.reason|add_class:"form-control" }}
+                            {% if form.reason.errors %}
+                                <div class="invalid-feedback d-block">
+                                    {{ form.reason.errors.0 }}
+                                </div>
+                            {% endif %}
+                        </div>
+
+                        <!-- Amount Requested (only for 'Other') -->
+                        <div class="mb-3" id="amount_container" style="display: none;">
+                            <label for="id_amount_requested" class="form-label">Amount Requested</label>
+                            {{ form.amount_requested|add_class:"form-control" }}
+                            {% if form.amount_requested.errors %}
+                                <div class="invalid-feedback d-block">
+                                    {{ form.amount_requested.errors.0 }}
+                                </div>
+                            {% endif %}
+                        </div>
+
+                        <div class="d-grid">
+                            <button type="submit" class="btn btn-primary">Submit Request</button>
+                        </div>
+                    </form>
+
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Script to toggle fields based on benefit type -->
+<script>
+    document.addEventListener("DOMContentLoaded", function() {
+        const benefitType = document.getElementById("id_benefit_type");
+        const reasonContainer = document.getElementById("reason_container");
+        const amountContainer = document.getElementById("amount_container");
+
+        function toggleFields() {
+            if (benefitType.value === "other") {
+                reasonContainer.style.display = "block";
+                amountContainer.style.display = "block";
+            } else {
+                reasonContainer.style.display = "none";
+                amountContainer.style.display = "none";
+            }
+        }
+
+        toggleFields();
+        benefitType.addEventListener("change", toggleFields);
+    });
+</script>
+{% endblock %}

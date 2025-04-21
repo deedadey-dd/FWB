@@ -1,8 +1,10 @@
 from django.core.exceptions import ValidationError
+from django.core.validators import MinValueValidator
 from django.db import models
 from django.utils.timezone import now
 from django.contrib.auth import get_user_model
 from decimal import Decimal
+from django.utils.translation import gettext_lazy as _
 
 
 User = get_user_model()
@@ -42,7 +44,7 @@ class MonthlyContribution(models.Model):
     amount = models.DecimalField(max_digits=10, decimal_places=2, default=0)
 
     def clean(self):
-        if self.amount is not None and self.amount <= Decimal("0"):  # Convert to Decimal
+        if self.amount is not None and Decimal(str(self.amount)) <= Decimal("0"):  # Convert to Decimal
             raise ValidationError({"amount": "The contribution amount must be greater than zero."})
 
     def save(self, *args, **kwargs):
@@ -63,7 +65,7 @@ class ExtraContribution(models.Model):
     date_contributed = models.DateField(default=now)
 
     def clean(self):
-        if self.amount is not None and self.amount <= Decimal("0"):  # Convert to Decimal
+        if self.amount is not None and Decimal(str(self.amount)) <= Decimal("0"):  # Convert to Decimal
             raise ValidationError({"amount": "The contribution amount must be greater than zero."})
 
     def save(self, *args, **kwargs):
@@ -83,7 +85,7 @@ class ContributionRecord(models.Model):
     recorded_at = models.DateTimeField(auto_now_add=True)
 
     def clean(self):
-        if self.amount is not None and self.amount <= Decimal("0"):  # Convert to Decimal
+        if self.amount is not None and Decimal(str(self.amount)) <= Decimal("0"):  # Convert to Decimal
             raise ValidationError({"amount": "The contribution amount must be greater than zero."})
 
     def save(self, *args, **kwargs):
@@ -92,3 +94,148 @@ class ContributionRecord(models.Model):
 
     def __str__(self):
         return f"{self.user} contributed {self.amount} on {self.recorded_at}"
+
+
+# BENEFITS AND EXPENSES
+
+class BenefitType(models.TextChoices):
+    WEDDING = "wedding", _("Wedding Benefit")
+    FUNERAL = "funeral", _("Funeral Benefit")
+    CHILDBIRTH = "childbirth", _("Childbirth Benefit")
+
+
+class WelfareBenefit(models.Model):
+    """Tracks welfare benefits received by users."""
+    user = models.ForeignKey(
+        User, on_delete=models.CASCADE, related_name="welfare_benefits"
+    )  # The recipient
+    benefit_type = models.CharField(max_length=20, choices=BenefitType.choices)
+    amount_awarded = models.DecimalField(max_digits=10, decimal_places=2)
+    extra_costs = models.DecimalField(max_digits=10, decimal_places=2, default=0.00)  # Transportation, logistics, etc.
+    date_awarded = models.DateField(auto_now_add=True)
+    recorded_by = models.ForeignKey(
+        User, on_delete=models.SET_NULL, null=True, related_name="benefits_recorded"
+    )
+
+    def total_expense(self):
+        return Decimal(str(self.amount_awarded)) + Decimal(str(self.extra_costs))  # Total spent on benefit
+
+    def clean(self):
+        amount_awarded = Decimal(str(self.amount_awarded))
+        extra_costs = Decimal(str(self.extra_costs))
+        if amount_awarded <= Decimal("0"):
+            raise ValidationError({"amount_awarded": "The benefit amount must be greater than zero."})
+        if extra_costs < Decimal("0"):
+            raise ValidationError({"extra_costs": "Extra costs cannot be negative."})
+
+    def save(self, *args, **kwargs):
+        self.clean()
+        super().save(*args, **kwargs)
+
+    def __str__(self):
+        return f"{self.user.username} - {self.benefit_type} Benefit: {self.amount_awarded}"
+
+
+class BenefitRequestStatus(models.TextChoices):
+    PENDING = "Pending", _("Pending")
+    ACCEPTED = "Accepted", _("Accepted")
+    DENIED = "Denied", _("Denied")
+
+
+class BenefitRequest(models.Model):
+    """Users request a benefit, and admins approve or deny it."""
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name="benefit_requests")
+    benefit_type = models.CharField(
+        max_length=20,
+        choices=[
+            ("wedding", "Wedding Benefit"),
+            ("funeral", "Funeral Benefit"),
+            ("childbirth", "Childbirth Benefit"),
+            ("other", "Other"),
+        ],
+    )
+    event_date = models.DateField()
+    reason = models.TextField(blank=True, null=True)
+    amount_requested = models.DecimalField(
+        max_digits=10,
+        decimal_places=2,
+        null=True,
+        blank=True
+    )
+    status = models.CharField(
+        max_length=10,
+        choices=BenefitRequestStatus.choices,
+        default=BenefitRequestStatus.PENDING
+    )
+    reviewed_by = models.ForeignKey(
+        User,
+        null=True,
+        blank=True,
+        on_delete=models.SET_NULL,
+        related_name="benefit_reviews"
+    )
+    reviewed_at = models.DateTimeField(null=True, blank=True)
+    requested_at = models.DateTimeField(auto_now_add=True)
+    fulfilled = models.BooleanField(default=False)
+
+    def clean(self):
+        if self.fulfilled and self.status != "Accepted":
+            raise ValidationError("Only accepted requests can be marked as fulfilled")
+
+        if self.benefit_type == "other":
+            if not self.amount_requested:
+                raise ValidationError({"amount_requested": "Amount is required for 'Other' benefit type."})
+            if Decimal(str(self.amount_requested)) <= Decimal("0"):
+                raise ValidationError({"amount_requested": "Amount must be greater than zero."})
+            if not self.reason:
+                raise ValidationError({"reason": "Reason is required for 'Other' benefit type."})
+        else:
+            self.amount_requested = None
+            self.reason = None
+
+    @property
+    def display_status(self):
+        if self.status == "Denied":
+            return "Denied"
+        return "Fulfilled" if self.fulfilled else self.status
+
+
+    def save(self, *args, **kwargs):
+        self.clean()
+        super().save(*args, **kwargs)
+
+# EXPENSES
+
+class ExpenseCategory(models.TextChoices):
+    BENEFIT = "Benefit", _("Benefit-Related Expense")
+    GENERAL = "General", _("General Welfare Expense")
+    ADMIN = "Admin", _("Administrative Expense")
+
+
+class Expense(models.Model):
+    """Tracks expenses made by the welfare group."""
+    user = models.ForeignKey(
+        User, on_delete=models.SET_NULL, null=True, blank=True, related_name="expenses"
+    )  # If expense is user-specific; otherwise, it's 'All'
+    description = models.TextField()
+    amount = models.DecimalField(max_digits=10, decimal_places=2)
+    category = models.CharField(max_length=20, choices=ExpenseCategory.choices, default=ExpenseCategory.GENERAL)
+    date = models.DateField(auto_now_add=True)
+    recorded_by = models.ForeignKey(
+        User, on_delete=models.SET_NULL, null=True, related_name="expenses_recorded"
+    )  # Only staff should record expenses
+
+    def clean(self):
+        if self.amount is None:
+            raise ValidationError({"amount": "This field is required"})
+        amount_used = Decimal(str(self.amount))
+        if amount_used <= Decimal("0"):
+            raise ValidationError({"amount": "The expense amount must be greater than zero."})
+
+    def save(self, *args, **kwargs):
+        self.clean()
+        super().save(*args, **kwargs)
+
+    def __str__(self):
+        recipient = self.user.username if self.user else "All"
+        return f"{self.category} Expense - {recipient}: {self.amount}"

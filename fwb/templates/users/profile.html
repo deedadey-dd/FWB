@@ -1,26 +1,74 @@
 {% extends "base.html" %}
 {% block content %}
 <div class="container mt-5">
-    <h2>Profile</h2>
-    <form method="post">
-        {% csrf_token %}
-        <div class="mb-3">
-            <label>First Name</label>
-            {{ form.first_name }}
+    {% if not profile_complete %}
+    <div class="alert alert-warning alert-dismissible fade show">
+        <h4><i class="bi bi-exclamation-triangle"></i> Complete Your Profile</h4>
+        <p>Please provide the following missing information to complete your profile:</p>
+        <ul>
+            {% if not user.residence %}<li>Residence address</li>{% endif %}
+            {% if not user.date_of_birth %}<li>Date of birth</li>{% endif %}
+            {% if not user.next_of_kin %}<li>Next of kin</li>{% endif %}
+            {% if not user.hometown %}<li>Hometown</li>{% endif %}
+            {% if not user.contacts.exists %}<li>At least one emergency contact</li>{% endif %}
+        </ul>
+    </div>
+    {% endif %}
+
+    <div class="row">
+        <div class="col-md-6">
+            <div class="card shadow-sm mb-4">
+                <div class="card-header bg-primary text-white">
+                    <h3 class="h5 mb-0">Basic Information</h3>
+                </div>
+                <div class="card-body">
+                    <form method="post">
+                        {% csrf_token %}
+                        {{ user_form.as_p }}
+                        <button type="submit" name="update_profile" class="btn btn-success">
+                            Update Profile
+                        </button>
+                    </form>
+                </div>
+            </div>
         </div>
-        <div class="mb-3">
-            <label>Last Name</label>
-            {{ form.last_name }}
+
+        <div class="col-md-6">
+            <div class="card shadow-sm">
+                <div class="card-header bg-info text-white">
+                    <h3 class="h5 mb-0">Emergency Contacts</h3>
+                </div>
+                <div class="card-body">
+                    {% if contacts %}
+                        <ul class="list-group mb-3">
+                            {% for contact in contacts %}
+                            <li class="list-group-item d-flex justify-content-between align-items-center">
+                                <div>
+                                    <strong>{{ contact.name }}</strong> ({{ contact.relationship }})
+                                    <br><small>{{ contact.phone_number }}</small>
+                                </div>
+                                <a href="{% url 'delete_contact' contact.id %}"
+                                   class="btn btn-sm btn-danger"
+                                   onclick="return confirm('Are you sure you want to delete {{ contact.name }}?');">
+                                    <i class="bi bi-trash"></i>
+                                </a>
+                            </li>
+                            {% endfor %}
+                        </ul>
+                    {% else %}
+                        <p class="text-muted">No emergency contacts added yet.</p>
+                    {% endif %}
+
+                    <h5 class="mt-3">Add New Contact</h5>
+                    <form method="POST" action="{% url 'profile' %}">
+                      {% csrf_token %}
+                      {{ contact_form.as_p }}
+                      <button type="submit" name="add_contact" class="btn btn-primary">Add Contact</button>
+                    </form>
+                </div>
+            </div>
         </div>
-        <div class="mb-3">
-            <label>Email</label>
-            {{ form.email }}
-        </div>
-        <div class="mb-3">
-            <label>Phone Number</label>
-            {{ form.phone_number }}
-        </div>
-        <button type="submit" class="btn btn-success">Update Profile</button>
-    </form>
+    </div>
 </div>
+
 {% endblock %}

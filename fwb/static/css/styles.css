@@ -1,0 +1,32 @@
+/* Highlight active year in dropdown */
+.dropdown-item.active {
+    background-color: #0d6efd;
+    color: white;
+}
+
+/* Better spacing for dropdowns */
+.dropdown-menu {
+    max-height: 300px;
+    overflow-y: auto;
+}
+
+/* Staff Dashboard Specific Styles */
+.card-header {
+    font-weight: 600;
+}
+.btn-lg {
+    padding: 1.5rem;
+    font-size: 1.1rem;
+}
+.btn-lg i {
+    display: block;
+    margin-bottom: 0.5rem;
+    font-size: 2rem;
+}
+
+.btn-danger {
+    transition: all 0.2s;
+}
+.btn-danger:hover {
+    transform: scale(1.1);
+}

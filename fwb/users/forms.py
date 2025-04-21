@@ -3,7 +3,7 @@ from django.contrib.auth import get_user_model
 from django.contrib.auth.forms import UserCreationForm, UserChangeForm
 from django.core.validators import RegexValidator
 
-from .models import CustomUser, Contact, Child
+from .models import CustomUser, Contact
 
 User = get_user_model()
 
@@ -51,10 +51,10 @@ class ContactForm(forms.ModelForm):
         fields = ['name', 'relationship', 'phone_number']
 
 
-class ChildForm(forms.ModelForm):
-    class Meta:
-        model = Child
-        fields = ['name', 'date_of_birth', 'phone_number']
+# class ChildForm(forms.ModelForm):
+#     class Meta:
+#         model = Child
+#         fields = ['name', 'date_of_birth', 'phone_number']
 
 
 class LoginForm(forms.Form):
@@ -82,3 +82,10 @@ class ProfileCompletionForm(forms.ModelForm):
         widgets = {
             'date_of_birth': forms.DateInput(attrs={'type': 'date'})
         }
+
+    def __init__(self, *args, **kwargs):
+        user = kwargs.pop('user', None)  # Get the current user
+        super().__init__(*args, **kwargs)
+        if user:
+            # self.fields['next_of_kin'].queryset = user.contacts.all()
+            self.fields['next_of_kin'].queryset = Contact.objects.filter(user=user)

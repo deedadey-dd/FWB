@@ -9,7 +9,13 @@ class CustomUser(AbstractUser):
     other_names = models.CharField(max_length=100, blank=True, null=True)
     phone_number = PhoneNumberField(unique=True)
     date_of_birth = models.DateField(null=True, blank=True)
-    next_of_kin = models.CharField(max_length=100, null=True, blank=True)
+    next_of_kin = models.ForeignKey(
+        'Contact',
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='users_as_next_of_kin'
+    )
     hometown = models.CharField(max_length=100, null=True, blank=True)
     profile_complete = models.BooleanField(default=False)
 
@@ -19,11 +25,9 @@ class CustomUser(AbstractUser):
             self.date_of_birth,
             self.next_of_kin,
             self.hometown,
-            self.contacts.exists()  # At least one contact
+            self.contacts.exists()
         ]
-        self.profile_complete = all(required_fields)
-        self.save()
-        return self.profile_complete
+        return all(required_fields)
 
     def __str__(self):
         other_names_display = self.other_names or ""
@@ -48,8 +52,8 @@ class Contact(models.Model):
         return f'{self.name} ({self.relationship}) - {self.user.first_name}'
 
 
-class Child(models.Model):
-    user = models.ForeignKey(CustomUser, on_delete=CASCADE, related_name='Children')
-    name = models.CharField(max_length=150,)
-    date_of_birth = models.DateField()
-    phone_number = models.CharField(max_length=15, blank=True, null=True)
+# class Child(models.Model):
+#     user = models.ForeignKey(CustomUser, on_delete=CASCADE, related_name='Children')
+#     name = models.CharField(max_length=150,)
+#     date_of_birth = models.DateField()
+#     phone_number = models.CharField(max_length=15, blank=True, null=True)

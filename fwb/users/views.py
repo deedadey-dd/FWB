@@ -3,12 +3,11 @@ from django.contrib.auth.decorators import login_required, user_passes_test
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib import messages
 from django.template.context_processors import request
-
-from .forms import CustomUserCreationForm, CustomUserUpdateForm, ContactForm, ChildForm, LoginForm, UserProfileForm, \
+from django.utils.timezone import now
+from .forms import CustomUserCreationForm, CustomUserUpdateForm, ContactForm, LoginForm, UserProfileForm, \
     ProfileCompletionForm
 from django.contrib.auth.forms import PasswordChangeForm
-
-from contributions.models import BenefitRequest
+from contributions.models import BenefitRequest, Contribution
 
 from .models import Contact
 
@@ -75,18 +74,18 @@ def update_profile(request):
 #     return render(request, "users/add_contact.html", {"form": form})
 
 
-@login_required
-def add_child(request):
-    if request.method == "POST":
-        form = ChildForm(request.POST)
-        if form.is_valid():
-            child = form.save(commit=False)
-            child.user = request.user
-            child.save()
-            return redirect("dashboard")
-    else:
-        form = ChildForm()
-    return render(request, "users/add_child.html", {"form": form})
+# @login_required
+# def add_child(request):
+#     if request.method == "POST":
+#         form = ChildForm(request.POST)
+#         if form.is_valid():
+#             child = form.save(commit=False)
+#             child.user = request.user
+#             child.save()
+#             return redirect("dashboard")
+#     else:
+#         form = ChildForm()
+#     return render(request, "users/add_child.html", {"form": form})
 
 
 def user_login(request):
@@ -126,39 +125,49 @@ def dashboard(request):
 def profile(request):
     if request.method == 'POST':
         if 'update_profile' in request.POST:
-            user_form = ProfileCompletionForm(request.POST, instance=request.user)
+            user_form = ProfileCompletionForm(request.POST or None, instance=request.user, user=request.user)
             if user_form.is_valid():
-                user = user_form.save()
-                user.check_profile_completion()
-                messages.success(request, "Profile updated successfully!")
+                user_form.save()
+                messages.success(request, "Other info updated successfully!")
+                return redirect('profile')
+
+        elif 'update_info' in request.POST:
+            info_form = UserProfileForm(request.POST or None, instance=request.user)
+            if info_form.is_valid():
+                info_form.save()
+                messages.success(request, "Personal Info updated successfully!")
                 return redirect('profile')
 
         elif 'add_contact' in request.POST:
             contact_form = ContactForm(request.POST)
             if contact_form.is_valid():
                 name = contact_form.cleaned_data.get("name")
-                phone = contact_form.cleaned_data.get("phone")
+                phone = contact_form.cleaned_data.get("phone_number")
 
-                # Prevent duplicate contacts
-                if request.user.contacts.filter(name=name, phone_number=phone).exists():
-                    messages.warning(request, "This contact already exists.")
-                    return redirect('profile')
-                else:
+                if not request.user.contacts.filter(name=name, phone_number=phone).exists():
                     contact = contact_form.save(commit=False)
                     contact.user = request.user
                     contact.save()
-                    print('saved')
-                    request.user.check_profile_completion()
                     messages.success(request, "Contact added successfully!")
 
-            return redirect('profile')
+                else:
+                    messages.warning(request, "This contact already exists.")
 
-    user_form = ProfileCompletionForm(instance=request.user)
+                return redirect('profile')
+
+    info_form = UserProfileForm(instance=request.user)
+    user_form = ProfileCompletionForm(instance=request.user, user=request.user)
     contact_form = ContactForm()
+
+    new_status = request.user.check_profile_completion()
+    if request.user.profile_complete != new_status:
+        request.user.profile_complete = new_status
+        request.user.save()
 
     context = {
         'user_form': user_form,
         'contact_form': contact_form,
+        'info_form': info_form,
         'profile_complete': request.user.profile_complete,
         'contacts': request.user.contacts.all()
     }

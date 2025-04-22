@@ -1,6 +1,6 @@
 from django.contrib import admin
 from django.contrib.auth.admin import UserAdmin
-from .models import CustomUser, Contact, Child
+from .models import CustomUser, Contact
 
 
 # Register your models here.
@@ -21,10 +21,10 @@ class ContactAdmin(admin.ModelAdmin):
     search_fields = ('name', 'relationship', 'phone_number')
 
 
-@admin.register(Child)
-class ChildAdmin(admin.ModelAdmin):
-    list_display = ('user', 'name', 'date_of_birth', 'phone_number')
-    search_fields = ('name', 'date_of_birth', 'phone_number')
+# @admin.register(Child)
+# class ChildAdmin(admin.ModelAdmin):
+#     list_display = ('user', 'name', 'date_of_birth', 'phone_number')
+#     search_fields = ('name', 'date_of_birth', 'phone_number')
 
 
 admin.site.register(CustomUser, CustomUserAdmin)

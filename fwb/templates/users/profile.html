@@ -16,13 +16,30 @@
     {% endif %}
 
     <div class="row">
-        <div class="col-md-6">
+        <div class="col-md-4">
             <div class="card shadow-sm mb-4">
                 <div class="card-header bg-primary text-white">
-                    <h3 class="h5 mb-0">Basic Information</h3>
+                    <h3 class="h5 mb-0">Personal Information</h3>
                 </div>
                 <div class="card-body">
-                    <form method="post">
+                    <form method="POST" action="{% url 'profile' %}">
+                        {% csrf_token %}
+                        {{ info_form.as_p }}
+                        <button type="submit" name="update_info" class="btn btn-success">
+                            Update Info
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-4">
+            <div class="card shadow-sm mb-4">
+                <div class="card-header bg-primary text-white">
+                    <h3 class="h5 mb-0">Other Information</h3>
+                </div>
+                <div class="card-body">
+                    <form method="POST" action="{% url 'profile' %}">
                         {% csrf_token %}
                         {{ user_form.as_p }}
                         <button type="submit" name="update_profile" class="btn btn-success">
@@ -33,7 +50,7 @@
             </div>
         </div>
 
-        <div class="col-md-6">
+        <div class="col-md-4">
             <div class="card shadow-sm">
                 <div class="card-header bg-info text-white">
                     <h3 class="h5 mb-0">Emergency Contacts</h3>
@@ -60,10 +77,13 @@
                     {% endif %}
 
                     <h5 class="mt-3">Add New Contact</h5>
+                    <!-- Contact Add Form -->
                     <form method="POST" action="{% url 'profile' %}">
-                      {% csrf_token %}
-                      {{ contact_form.as_p }}
-                      <button type="submit" name="add_contact" class="btn btn-primary">Add Contact</button>
+                        {% csrf_token %}
+                        {{ contact_form.as_p }}
+                        <button type="submit" name="add_contact" class="btn btn-primary">
+                            Add Contact
+                        </button>
                     </form>
                 </div>
             </div>

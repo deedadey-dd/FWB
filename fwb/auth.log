@@ -4447,3 +4447,5 @@ Traceback (most recent call last):
 TypeError: BaseModelForm.__init__() got an unexpected keyword argument 'user'
 Not Found: /favicon.ico
 Not Found: /favicon.ico
+Not Found: /favicon.ico
+Not Found: /favicon.ico
